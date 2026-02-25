@@ -1,0 +1,12 @@
+#!/bin/bash
+chmod +x ~/.local/bin/*
+chmod +x ~/.config/hypr/scripts/*
+chmod +x ~/.config/waybar/scripts/*
+echo "Made all scripts executable."
+
+# Install packages
+if command -v pacman &> /dev/null; then
+    echo "Installing packages..."
+    sudo pacman -S --needed - < ~/.local/bin/packages.txt
+    echo "Packages installed."
+fi
