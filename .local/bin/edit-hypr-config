@@ -1,0 +1,11 @@
+#!/bin/bash
+nvim \
+  ~/.config/hypr/bindings.conf \
+  ~/.config/hypr/looknfeel.conf \
+  ~/.config/hypr/input.conf \
+  ~/.config/hypr/autostart.conf \
+  ~/.config/hypr/windows.conf \
+  ~/.config/hypr/monitors.conf \
+  ~/.config/hypr/envs.conf
+
+

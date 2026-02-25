@@ -1,0 +1,2 @@
+#!/bin/bash
+GTK_THEME=Arc-Dark:dark /usr/bin/dropbox "$@"

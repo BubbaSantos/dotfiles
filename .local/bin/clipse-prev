@@ -1,0 +1,18 @@
+#!/bin/bash
+HISTORY="$HOME/.config/clipse/clipboard_history.json"
+
+INDEX=${1:-1}  # default to 2nd last, but accepts an argument
+
+current=$(jq -r '.clipboardHistory[0].value' "$HISTORY")
+item=$(jq -r ".clipboardHistory[$INDEX].value" "$HISTORY")
+
+if [ -n "$item" ]; then
+    echo -n "$item" | wl-copy
+    sleep 0.1
+    wtype -M ctrl v -m ctrl
+    sleep 0.1
+    echo -n "$current" | wl-copy  # restore original
+fi
+```
+
+

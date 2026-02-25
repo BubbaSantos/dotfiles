@@ -1,0 +1,50 @@
+#!/bin/bash
+source ~/.vosk-env/bin/activate
+
+python3 << 'PYTHON'
+import pyaudio
+import json
+import subprocess
+import sys
+from vosk import Model, KaldiRecognizer
+
+print("Loading model...", file=sys.stderr, flush=True)
+model = Model("/home/bubba/.vosk/vosk-model-en-us-0.42-gigaspeech")
+rec = KaldiRecognizer(model, 16000)
+
+print("Recording... speak now (Ctrl+C to stop)", file=sys.stderr, flush=True)
+
+p = pyaudio.PyAudio()
+stream = p.open(format=pyaudio.paInt16, channels=1, rate=16000, input=True, frames_per_buffer=4000)
+stream.start_stream()
+
+results = []
+
+try:
+    while True:
+        data = stream.read(4000, exception_on_overflow=False)
+        if rec.AcceptWaveform(data):
+            result = json.loads(rec.Result())
+            if "result" in result and result["result"]:
+                text = " ".join([r["conf"] for r in result["result"]])
+                results.append(text)
+                print(f"Final: {text}", file=sys.stderr, flush=True)
+        else:
+            partial = json.loads(rec.PartialResult())
+            if "partial" in partial and partial["partial"]:
+                print(f"\rPartial: {partial['partial']}", end="", file=sys.stderr, flush=True)
+except KeyboardInterrupt:
+    pass
+finally:
+    stream.stop_stream()
+    stream.close()
+    p.terminate()
+    
+    full_text = " ".join(results).strip()
+    if full_text:
+        subprocess.run(['xclip', '-selection', 'clipboard'], input=full_text.encode(), check=False)
+        print(f"\nCopied to clipboard: {full_text}", file=sys.stderr, flush=True)
+    else:
+        print("\nNo text recorded", file=sys.stderr, flush=True)
+
+PYTHON

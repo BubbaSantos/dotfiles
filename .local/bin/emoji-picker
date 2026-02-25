@@ -1,0 +1,113 @@
+#!/bin/bash
+# Searchable emoji picker v2
+# Features: usage tracking, always paste, shorthand format, sorted by usage
+
+EMOJIS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/emojis/emojis.txt"
+USAGE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/emojis/usage-count.txt"
+
+# Check if emojis file exists
+if [ ! -f "$EMOJIS_FILE" ]; then
+    notify-send "Emoji Picker" "Emojis file not found: $EMOJIS_FILE"
+    exit 1
+fi
+
+# Create usage file if it doesn't exist
+touch "$USAGE_FILE"
+
+# Detect which launcher/menu is available
+if command -v rofi &> /dev/null; then
+    LAUNCHER="rofi"
+elif command -v wofi &> /dev/null; then
+    LAUNCHER="wofi"
+elif command -v fzf &> /dev/null; then
+    LAUNCHER="fzf"
+else
+    notify-send "Emoji Picker" "No launcher found"
+    exit 1
+fi
+
+# Function to show menu and get selection
+show_menu() {
+    case "$LAUNCHER" in
+        wofi)
+            wofi --dmenu --insensitive --prompt "Emoji:" --lines 10 --width 400 --height 300 --style "$HOME/.config/wofi/style.css"
+            ;;
+        rofi)
+            rofi -dmenu -i -no-sort -matching normal -p "Emoji:" -lines 10
+            ;;
+        fzf)
+            alacritty -e sh -c "echo '$display_list' | fzf --prompt='Emoji: ' --reverse --border --no-sort --exact"
+            ;;
+    esac
+}
+
+# Function to get usage count for an emoji
+get_usage_count() {
+    local key="$1"
+    grep "^$key:" "$USAGE_FILE" 2>/dev/null | cut -d: -f2 || echo "0"
+}
+
+# Function to increment usage count
+increment_usage() {
+    local key="$1"
+    local count=$(get_usage_count "$key")
+    local new_count=$((count + 1))
+    
+    # Remove old entry and add new one
+    grep -v "^$key:" "$USAGE_FILE" > "${USAGE_FILE}.tmp" 2>/dev/null || true
+    echo "$key:$new_count" >> "${USAGE_FILE}.tmp"
+    mv "${USAGE_FILE}.tmp" "$USAGE_FILE"
+}
+
+# Parse emojis file - format: shorthand|display|emoji
+declare -A emojis_display
+declare -A emojis_text
+
+while IFS='|' read -r shorthand display emoji || [ -n "$shorthand" ]; do
+    if [[ ! "$shorthand" =~ ^[[:space:]]*# ]] && [ -n "$shorthand" ]; then
+        emojis_display["$shorthand"]="$display"
+        emojis_text["$shorthand"]="$emoji"
+    fi
+done < "$EMOJIS_FILE"
+
+# Build display list - sort by usage count (most used first), then alphabetically
+declare -A display_with_usage
+for key in "${!emojis_display[@]}"; do
+    usage=$(get_usage_count "$key")
+    # Pad usage count in reverse (9999 - usage) so higher counts sort first
+    padded_usage=$(printf "%04d" $((9999 - usage)))
+    display_with_usage["${padded_usage}-${key}"]="$key - ${emojis_display[$key]}"
+done
+
+# Sort by usage count first (most used first), then alphabetically
+display_list=""
+for sort_key in $(printf '%s\n' "${!display_with_usage[@]}" | sort); do
+    display_list+="${display_with_usage[$sort_key]}"$'\n'
+done
+
+# Show menu and get selection
+selected=$(echo -n "$display_list" | show_menu)
+
+# Exit if nothing selected
+[ -z "$selected" ] && exit 0
+
+# Extract the shorthand from selection (first word before dash)
+shorthand=$(echo "$selected" | awk '{print $1}')
+
+# Increment usage count
+increment_usage "$shorthand"
+
+# Get the emoji text and strip trailing newlines
+emoji="${emojis_text[$shorthand]}"
+while [[ "$emoji" == *$'\n' ]]; do
+    emoji="${emoji%$'\n'}"
+done
+
+# Always paste the emoji
+if [ -n "$emoji" ]; then
+    echo -n "$emoji" | wl-copy
+    sleep 0.2
+    wtype -M ctrl v -m ctrl
+else
+    notify-send "Emoji Picker" "Emoji not found: $shorthand"
+fi

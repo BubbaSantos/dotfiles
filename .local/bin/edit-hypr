@@ -1,0 +1,20 @@
+#!/bin/bash
+nvim \
+  ~/.config/hypr/hyprland.conf \
+  ~/.config/hypr/monitors.conf \
+  ~/.config/hypr/input.conf \
+  ~/.config/hypr/bindings.conf \
+  ~/.config/hypr/envs.conf \
+  ~/.config/hypr/lookfeel.conf \
+  ~/.config/hypr/autostart.conf \
+  ~/.config/hypr/windows.conf \
+  ~/.local/share/omarchy/default/hypr/autostart.conf \
+  ~/.local/share/omarchy/default/hypr/bindings/media.conf \
+  ~/.local/share/omarchy/default/hypr/bindings/clipboard.conf \
+  ~/.local/share/omarchy/default/hypr/bindings/tiling-v2.conf \
+  ~/.local/share/omarchy/default/hypr/bindings/utilities.conf \
+  ~/.local/share/omarchy/default/hypr/envs.conf \
+  ~/.local/share/omarchy/default/hypr/lookfeel.conf \
+  ~/.local/share/omarchy/default/hypr/input.conf \
+  ~/.local/share/omarchy/default/hypr/windows.conf \
+  ~/.config/omarchy/current/theme/hyprland.conf

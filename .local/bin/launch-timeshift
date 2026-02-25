@@ -1,0 +1,4 @@
+#!/bin/bash
+xhost +si:localuser:root
+sudo -E timeshift-gtk
+xhost -si:localuser:root

@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# Launch walker clipboard and capture selection
+selection=$(/home/bubba/.local/share/omarchy/bin/omarchy-launch-walker -m clipboard)
+
+# Debug: log what we got
+echo "Selection: '$selection'" >> /tmp/clipboard-debug.log
+
+# If user didn't cancel (selection is not empty), paste it
+if [ -n "$selection" ]; then
+  # Copy selection to clipboard
+  echo -n "$selection" | wl-copy
+  
+  echo "Copied to clipboard" >> /tmp/clipboard-debug.log
+  
+  # Wait a bit longer for clipboard to be ready
+  sleep 0.2
+  
+  # Paste using shift+Insert
+  echo "About to paste" >> /tmp/clipboard-debug.log
+  xdotool key shift+Insert
+  
+  echo "Paste command sent" >> /tmp/clipboard-debug.log
+else
+  echo "No selection or cancelled" >> /tmp/clipboard-debug.log
+fi
