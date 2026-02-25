@@ -1,0 +1,1 @@
+/home/bubba/.config/omarchy/current/theme/neovim.lua

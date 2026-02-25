@@ -1,0 +1,233 @@
+/* Theme: gruvbox */
+/* Generated from template: Wed Nov 19 10:07:00 PM GMT 2025 */
+/* Color Variables */
+@define-color bg_color rgba(40, 40, 40, 0.8);
+@define-color border_color #d5c4a1;
+@define-color foreground #ebdbb2;
+@define-color muted_color #fb4934;
+@define-color active_workspace rgba(213, 196, 161, 0.3);
+@define-color active_text #83a598;
+@define-color background rgba(40, 40, 40, 0.8);
+/* Waybar Style Template */
+/* Color variables will be injected by the update script */
+/* Run /home/bubba/.config/waybar/waybar-theme-updater.sh after making changes to this template */
+
+* {
+  background-color: transparent;
+  color: @foreground;
+  border: none;
+  border-radius: 0;
+  min-height: 0;
+  font-family: "JetBrainsMono Nerd Font","Font Awesome 6 Free";
+  font-size: 12px;
+}
+
+window#waybar {
+  background-color: transparent;
+}
+
+.modules-left {
+  margin-left: 8px;
+}
+
+.modules-right {
+  margin-right: 8px;
+}
+
+/* Consistent spacing for all modules */
+#workspaces,
+#clock,
+#battery,
+#custom-battery,
+#pulseaudio,
+#custom-expand-icon,
+#tray-expander,
+#custom-omarchy,
+#hardware,
+#custom-nowplaying,
+#custom-update {
+  background-color: @bg_color;
+  border: 1px solid @border_color;
+  border-radius: 20px;
+  padding: 1px 10px;
+  margin: 0 1px;
+}
+
+#hardware {
+  padding: 1px 4px;
+}
+
+/* Workspaces specific styling */
+#workspaces {
+  padding: 1px 8px;
+}
+
+#workspaces button {
+  all: initial;
+  padding: 0 6px;
+  margin: 0 1px;
+  min-width: 9px;
+  color: @foreground;
+  background-color: transparent;
+}
+
+#workspaces button.empty {
+  opacity: 0.5;
+}
+
+#workspaces button.active {
+  background: @active_workspace;
+  color: @active_text;
+  border-radius: 20px;
+  transition: all 0.3s cubic-bezier(0.55, -0.68, 0.48, 1.682);
+}
+
+#workspaces button label {
+  font-size: 12px;
+}
+
+/* Special workspaces styling */
+#workspaces button.special {
+  background: #d79921;
+  color: @background;
+  border-radius: 20px;
+}
+#workspaces button.special.active {
+  background: #b8860b;
+  color: @foreground;
+  border-radius: 20px;
+}
+
+/* Battery states */
+#custom-battery {
+  padding: 1px 14px 1px 10px;
+}
+
+#battery.warning,
+#custom-battery.warning {
+  color: #ffb86c;
+}
+
+#battery.critical,
+#custom-battery.critical {
+  color: #ff5555;
+}
+
+#battery.charging,
+#custom-battery.charging {
+  color: #50fa7b;
+}
+
+/* Pulseaudio specific styling */
+#pulseaudio {
+  padding: 1px 14px 1px 10px;
+}
+
+#pulseaudio.muted {
+  color: @muted_color;
+}
+
+/* Custom expand icon */
+#custom-expand-icon {
+  padding: 1px 6px;
+  font-size: 14px;
+}
+
+/* Tray expander container */
+#tray-expander #tray,
+#tray-expander #custom-remmina,
+#tray-expander #custom-expand-icon {
+  background-color: transparent;
+  border: none;
+  padding: 0 6px;
+  margin: 0 2px;
+}
+
+#network {
+  background-color: @bg_color;
+  border: 1px solid @border_color;
+  border-radius: 20px;
+  padding: 1px 14px 1px 10px;
+  margin: 0 1px;
+}
+
+/* Bluetooth pill */
+#bluetooth {
+  font-size: 15px;
+  background-color: @bg_color;
+  border: 1px solid @border_color;
+  border-radius: 20px;
+  padding: 1px 10px;
+  margin: 0 1px;
+}
+
+#bluetooth.connected {
+  color: #5b7fc9;
+}
+
+/* Hardware module internal items */
+#hardware #custom-hardware-icon,
+#hardware #cpu,
+#hardware #memory,
+#hardware #disk {
+  background-color: transparent;
+  border: none;
+  padding: 0 8px;
+  margin: 0 2px;
+}
+
+/* Tooltip styling */
+tooltip {
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: @foreground;
+}
+
+/* Tray tooltip specific styling */
+#tray tooltip {
+  background-color: rgba(0, 0, 0, 0.9);
+  border-radius: 8px;
+  padding: 6px 8px;
+  color: #ffffff;
+}
+
+#tray tooltip label {
+  color: #ffffff;
+}
+#custom-mako {
+  font-size: 12px;
+  background-color: @bg_color;
+  border: 1px solid @border_color;
+  border-radius:20px;
+  padding: 5px 5px;
+  margin: 0 1px;
+  min-width: 20px;
+  min-height: 20px;
+}
+
+#custom-mako.dnd-active {
+  color: #ff5555;
+}
+
+#custom-mako.notification {
+  color: #50fa7b;
+}
+
+#custom-mako.normal {
+  color: @foreground;
+}
+#group-right-panel {
+  background-color: @bg_color;
+  border: 1px solid @border_color;
+  border-radius: 20px;
+  padding: 1px 10px;
+  margin: 0 1px;
+}
+
+#group-right-panel > * {
+  margin: 0;
+  padding: 0;
+  background-color: transparent;
+  border: none;
+}

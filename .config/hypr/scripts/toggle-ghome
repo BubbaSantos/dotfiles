@@ -1,0 +1,12 @@
+#!/bin/bash
+# Check if Google Home window exists
+if hyprctl clients | grep -q "chrome-home.google.com__home_1"; then
+    # Get the address of the first Google Home window
+    ghome_addr=$(hyprctl clients -j | jq -r '.[] | select(.class | contains("chrome-home.google.com__home_1")) | .address' | head -n 1)
+    
+    # Focus the Google Home window
+    hyprctl dispatch focuswindow "address:$ghome_addr"
+else
+    # Launch Google Home
+    chromium --ozone-platform=wayland --app=https://home.google.com/ &
+fi

@@ -1,0 +1,278 @@
+{
+  "gtk-layer-shell": true,
+  "reload_style_on_change": true,
+  "layer": "top",
+  "position": "top",
+  "spacing": 0,
+  "height": 28,
+  "modules-left": [
+    "custom/cava",
+    "custom/nowplaying",
+    "pulseaudio"
+  ],
+  "modules-center": [
+    "hyprland/workspaces"
+  ],
+  "modules-right": [
+    "group/tray-expander",
+    "custom/hyprwhspr",
+    "network",
+    "bluetooth",
+    "clock",
+    "custom/battery",
+
+  ],
+  "hyprland/workspaces": {
+  "on-click": "activate",
+  "format": "{name}",
+  "format-icons": {
+    "default": "",
+    "active": ""
+  },
+  "persistent-workspaces": {
+    "1": [],
+    "2": [],
+    "3": [],
+    "4": [],
+    "5": []
+  },
+  "show-special": true,
+  "special-visible-only": true
+},
+  "custom/omarchy": {
+    "format": "",
+    "on-click": "omarchy-menu",
+    "tooltip-format": "Omarchy Menu\n\nSuper + Alt + Space"
+  },
+  "custom/nowplaying": {
+  "format": " {}",
+  "max-length": 40,
+  "interval": 1,
+  "exec": "~/.config/waybar/scripts/nowplaying.sh",
+  "on-click": "playerctl play-pause",
+  "on-click-right": "playerctl next",
+  "on-scroll-up": "pamixer -i 2",
+  "on-scroll-down": "pamixer -d 2",
+  "tooltip": true,
+  "return-type": "json"
+},
+  "custom/hyprwhspr": {
+    "format": "{}",
+    "exec": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh status",
+    "interval": 1,
+    "return-type": "json",
+    "exec-on-event": true,
+    "on-click": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh record",
+    "_old_on-click-right": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh restart",
+    "on-click-right": "bash -c 'pkill -9 ydotoold; rm -f /run/user/1000/.ydotool_socket; systemctl --user restart ydotool; sleep 0.5; systemctl --user restart hyprwhspr'",
+    "tooltip": true
+  },
+  
+  "custom/audio-output": {
+    "format": "{}",
+    "interval": 2,
+    "exec": "~/.config/waybar/scripts/audio-output.sh",
+    "on-click": "~/.config/waybar/scripts/toggle-audio-output.sh",
+    "return-type": "json",
+    "tooltip": true,
+    "signal": 8
+},
+  "custom/hyprwhspr": {
+    "format": "{}",
+    "exec": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh status",
+    "interval": 1,
+    "return-type": "json",
+    "exec-on-event": true,
+    "on-click": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh record",
+    "on-click-right": "/usr/lib/hyprwhspr/config/hyprland/hyprwhspr-tray.sh restart",
+    "tooltip": true
+},
+  
+  "custom/cava": {
+  "exec": "~/.config/waybar/scripts/cava.sh",
+  "format": "{}",
+  "tooltip": false,
+  "on-click": "playerctl play-pause",
+  "on-click-right": "playerctl next",
+  "on-click-middle": "ghostty -e wiremix",
+  "on-scroll-up": "pamixer -i 2",
+  "on-scroll-down": "pamixer -d 2",
+  "restart-interval": 0
+},
+  "custom/update": {
+    "format": "",
+    "exec": "omarchy-update-available",
+    "on-click": "alacritty --class Omarchy --title Omarchy -e omarchy-update",
+    "tooltip-format": "Omarchy update available",
+    "interval": 3600
+  },
+  "cpu": {
+    "interval": 5,
+    "format": "󰍛",
+    "on-click": "alacritty -e btop"
+  },
+   "clock": {
+    "interval": 1,
+    "format": "{:%I:%M:%S %p}",
+    "format-alt": "{:%A %d %B %Y}",
+    "tooltip": true,
+    "tooltip-format": "<tt><big>{calendar}</big></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "on-scroll": 1,
+      "on-click-right": "mode",
+      "format": {
+        "months": "<span color='#ffead3'><b>{}</b></span>",
+        "days": "<span color='#ecc6d9'><b>{}</b></span>",
+        "weekdays": "<span color='#ffcc66'><b>{}</b></span>",
+        "today": "<span color='#ff6699'><b><u>{}</u></b></span>"
+      }
+    },
+    "actions": {
+      "on-click-right": "mode"
+    }
+},
+  "network": {
+    "format-icons": ["󰤯","󰤟","󰤢","󰤥","󰤨"],
+    "format": "{icon}",
+    "format-wifi": "{essid} {icon}",
+    "format-ethernet": "󰀂",
+    "format-disconnected": "󰖪",
+    "tooltip-format": "{essid} ({frequency} GHz)\nSignal: {signalStrength}%\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-wifi": "{essid} ({frequency} GHz)\nSignal: {signalStrength}%\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-ethernet": "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-disconnected": "Disconnected",
+    "interval": 1,
+    "nospacing": 1,
+    "on-click": "cycle-format",
+    "on-click-right": "alacritty --class=Impala -e impala",
+    "format-alt": "{essid} {signalStrength}%"
+},
+  "custom/battery": {
+    "exec": "~/.config/waybar/scripts/combined-battery.sh",
+    "return-type": "json",
+    "interval": 1,
+    "format": "{}",
+    "on-click": "[ $(cat /tmp/waybar-battery-mode) = 'percentage' ] && echo 'time' > /tmp/waybar-battery-mode || echo 'percentage' > /tmp/waybar-battery-mode",
+    "states": {
+      "warning": 20,
+      "critical": 10
+    }
+},
+  "bluetooth": {
+    "format": "",
+    "format-disabled": "󰂲",
+    "format-off": "󰂲",
+    "format-connected": "󰂱",
+    "format-no-controller": "",
+    "tooltip-format": "Devices connected: {num_connections}",
+    "on-click": "omarchy-launch-bluetooth"
+  },
+  "pulseaudio": {
+    "format":"{volume}% {icon}",
+    "on-click": "pamixer -t",
+    "on-click-right": "alacritty --class=Wiremix -e wiremix",
+    "tooltip-format": "Playing at {volume}%",
+    "scroll-step": 5,
+    "format-muted": "mute 󰝟",
+    "format-icons": {
+      "headphone": "",
+       "default": [""],
+       "headphone": [""],
+       "headset": [""]
+    }
+  },
+ "custom/fix-list": {
+  "format": "   ",
+  "tooltip-format": "Fix list",
+  "on-click": "libreoffice --calc '/home/bubba/Documents/Things to fix in Linux!!.ods'"
+},
+  "custom/remmina": {
+  "format": " ",
+  "tooltip-format": "Remote Desktop",
+  "on-click": "remmina",
+  "on-click-right": "remmina -c quick_connect"
+},
+  "group/hardware": {
+    "orientation": "horizontal",
+    "drawer": {
+      "transition-duration": 0,
+      "children-class": "hardware-group-item",
+      "transition-left-to-right": false,
+      "click-to-reveal": true
+    },
+    "modules": [
+      "custom/hardware-icon",
+      "disk",
+      "memory",
+      "cpu"
+    ]
+  },
+  "custom/hardware-icon": {
+    "format": "",
+    "tooltip": false
+  },
+  "cpu": {
+    "interval": 3,
+    "format": " {usage}%",
+    "tooltip": false
+  },
+  "memory": {
+    "interval": 3,
+    "format": " {percentage}%",
+    "tooltip": false
+  },
+  "disk": {
+    "interval": 30,
+    "format": " {percentage_used}%",
+    "path": "/",
+    "tooltip": false
+  },
+  "group/tray-expander": {
+    "orientation": "inherit",
+    "drawer": {
+      "transition-duration": 0,
+      "children-class": "tray-group-item",
+      "transition-left-to-right": false,
+      "click-to-reveal": true
+    },
+    "modules": [
+      "custom/expand-icon",
+      "disk",
+      "memory",
+      "cpu",
+      "custom/mic-toggle",
+      "tray"
+    ]
+  },
+  "custom/expand-icon": {
+    "format": "󰮫",
+    "tooltip": false
+  },
+  "custom/voxtype": {
+    "exec": "omarchy-voxtype-status",
+    "return-type": "json",
+    "format": "{icon}",
+    "format-icons": {
+      "idle": "",
+      "recording": "󰍬",
+      "transcribing": "󰔟"
+    },
+    "tooltip": true,
+    "on-click-right": "omarchy-voxtype-config",
+    "on-click": "omarchy-voxtype-model"
+  },
+  "tray": {
+    "icon-size": 14,
+    "spacing": 8
+  },
+  "custom/mako": {
+  "format": "{text}",
+  "return-type": "json",
+  "interval": 1,
+  "exec": "~/.config/waybar/scripts/mako-module.sh",
+  "on-click": "makoctl dismiss",
+  "on-click-right": "sh -c 'if makoctl mode | grep -q dnd; then makoctl mode -s default; else makoctl mode -s dnd; fi'"
+}
+}

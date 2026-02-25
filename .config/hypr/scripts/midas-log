@@ -1,0 +1,58 @@
+#!/bin/bash
+# Midas Log - Auto-login with authenticator code (optimized version)
+
+wait_for_window() {
+    local window_class="$1"
+    local max_wait="${2:-50}"
+    
+    for ((i=0; i<max_wait; i++)); do
+        if hyprctl clients -j | jq -e ".[] | select(.class == \"$window_class\")" > /dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.1
+    done
+    return 1
+}
+
+# Store original window
+ORIGINAL_ADDRESS=$(hyprctl activewindow -j | jq -r '.address')
+
+# Open authenticator
+authenticator &
+
+if ! wait_for_window "com.belmoussaoui.Authenticator" 100; then
+    exit 1
+fi
+
+sleep 0.1
+
+# Focus authenticator
+hyprctl dispatch focuswindow "class:com.belmoussaoui.Authenticator"
+sleep 0.1
+
+# Tab twice to navigate to code
+wtype -k Tab
+sleep 0.1
+wtype -k Tab
+sleep 0.1
+
+# Press Enter to copy
+wtype -k Return
+sleep 0.1
+
+# Switch back to original window
+hyprctl dispatch focuswindow "address:$ORIGINAL_ADDRESS"
+sleep 0.1
+
+# Paste with Ctrl+V
+wtype -M ctrl -k v -m ctrl
+sleep 0.4
+
+# Submit
+wtype -k Return
+sleep 0.1
+
+# Close authenticator
+hyprctl dispatch focuswindow "class:com.belmoussaoui.Authenticator"
+sleep 0.05
+hyprctl dispatch killactive
