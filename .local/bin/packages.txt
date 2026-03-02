@@ -22,6 +22,7 @@ cheese
 clang
 claude-code
 clipse
+cmatrix
 cups
 cups-browsed
 cups-filters
@@ -88,6 +89,7 @@ inetutils
 intel-ucode
 inxi
 iwd
+jellyfin-git
 jq
 kdeconnect
 kdenlive
@@ -161,6 +163,7 @@ python-pipx
 python-poetry-core
 python-pyaudio
 python-terminaltexteffects
+qbittorrent
 qt5-wayland
 qt6-wayland
 remmina
