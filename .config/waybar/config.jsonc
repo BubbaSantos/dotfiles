@@ -89,7 +89,7 @@
 },
   
   "custom/cava": {
-  "exec": "~/.config/waybar/scripts/cava.sh",
+  "exec": "~/.config/waybar/scripts/cava.py",
   "format": "{}",
   "tooltip": false,
   "on-click": "playerctl play-pause",

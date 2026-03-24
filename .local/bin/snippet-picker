@@ -1,129 +1,123 @@
 #!/bin/bash
-# Searchable snippet picker for CARA work templates v2
-# Features: usage tracking, always paste, proper spacing
-
+# ~/.local/bin/snippet-picker
 SNIPPETS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/snippets/work-snippets.txt"
 USAGE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/snippets/usage-count.txt"
 
-# Check if snippets file exists
 if [ ! -f "$SNIPPETS_FILE" ]; then
     notify-send "Snippet Picker" "Snippets file not found: $SNIPPETS_FILE"
     exit 1
 fi
 
-# Create usage file if it doesn't exist
 touch "$USAGE_FILE"
 
-# Detect which launcher/menu is available
-if command -v rofi &> /dev/null; then
-    LAUNCHER="rofi"
-elif command -v wofi &> /dev/null; then
-    LAUNCHER="wofi"
-elif command -v fzf &> /dev/null; then
-    LAUNCHER="fzf"
-else
-    notify-send "Snippet Picker" "No launcher found"
-    exit 1
-fi
-
-# Function to show menu and get selection
-show_menu() {
-    case "$LAUNCHER" in
-        wofi)
-            wofi --dmenu --insensitive --prompt "Snippet:" --lines 5 --width 400 --height 200 --style "$HOME/.config/wofi/style.css"
-            ;;
-        rofi)
-            rofi -dmenu -i -no-sort -matching normal -p "Snippet:"
-            ;;
-        fzf)
-            alacritty -e sh -c "echo '$display_list' | fzf --prompt='Snippet: ' --reverse --border --no-sort --exact"
-            ;;
-    esac
-}
-
-# Function to get usage count for a snippet
 get_usage_count() {
     local key="$1"
     grep "^$key:" "$USAGE_FILE" 2>/dev/null | cut -d: -f2 || echo "0"
 }
 
-# Function to increment usage count
 increment_usage() {
     local key="$1"
     local count=$(get_usage_count "$key")
     local new_count=$((count + 1))
-    
-    # Remove old entry and add new one
     grep -v "^$key:" "$USAGE_FILE" > "${USAGE_FILE}.tmp" 2>/dev/null || true
     echo "$key:$new_count" >> "${USAGE_FILE}.tmp"
     mv "${USAGE_FILE}.tmp" "$USAGE_FILE"
 }
 
-# Parse snippets file - read entire snippet including blank lines
-declare -A snippets_display
+# If --pick flag, run the fzf picker and write result to tmp file
+if [[ "$1" == "--pick" ]]; then
+    declare -A snippets_display
+    declare -A snippets_text
+    current_key=""
+    current_display=""
+    current_text=""
+
+    while IFS= read -r line || [ -n "$line" ]; do
+        if [[ "$line" =~ ^([a-z0-9]+)\|([^|]+)\|(.*)$ ]]; then
+            if [[ -n "$current_key" ]]; then
+                snippets_display["$current_key"]="$current_display"
+                snippets_text["$current_key"]="$current_text"
+            fi
+            current_key="${BASH_REMATCH[1]}"
+            current_display="${BASH_REMATCH[2]}"
+            current_text="${BASH_REMATCH[3]}"
+        elif [[ -n "$current_key" && ! "$line" =~ ^[[:space:]]*# ]]; then
+            current_text+=$'\n'"$line"
+        fi
+    done < "$SNIPPETS_FILE"
+
+    if [[ -n "$current_key" ]]; then
+        snippets_display["$current_key"]="$current_display"
+        snippets_text["$current_key"]="$current_text"
+    fi
+
+    declare -A display_with_length
+    for key in "${!snippets_display[@]}"; do
+        key_length=${#key}
+        padded_length=$(printf "%02d" "$key_length")
+        display_with_length["${padded_length}-${key}"]="$key - ${snippets_display[$key]}"
+    done
+
+    display_list=""
+    for sort_key in $(printf '%s\n' "${!display_with_length[@]}" | sort); do
+        display_list+="${display_with_length[$sort_key]}"$'\n'
+    done
+
+    selected=$(echo -n "$display_list" | fzf \
+        --prompt="  Snippet > " \
+        --layout=reverse \
+        --border=rounded \
+        --no-info \
+        --no-scrollbar)
+
+    [[ -z "$selected" ]] && exit 0
+
+    echo "$selected" > /tmp/snippet-selected
+    exit 0
+fi
+
+# Launch alacritty with --pick, wait for it to finish
+alacritty --title "snippet-picker" \
+           --option "font.size=11" \
+           -e bash ~/.local/bin/snippet-picker --pick
+wait
+
+# Read result
+[[ ! -f /tmp/snippet-selected ]] && exit 0
+selected=$(cat /tmp/snippet-selected)
+rm -f /tmp/snippet-selected
+
+[[ -z "$selected" ]] && exit 0
+
+shortcut=$(echo "$selected" | awk '{print $1}')
+increment_usage "$shortcut"
+
+# Re-parse to get snippet text
 declare -A snippets_text
 current_key=""
-current_display=""
 current_text=""
 
 while IFS= read -r line || [ -n "$line" ]; do
-    # Check if this is a new snippet definition (starts with key|display|)
     if [[ "$line" =~ ^([a-z0-9]+)\|([^|]+)\|(.*)$ ]]; then
-        # Save previous snippet if exists
         if [[ -n "$current_key" ]]; then
-            snippets_display["$current_key"]="$current_display"
             snippets_text["$current_key"]="$current_text"
         fi
-        
-        # Start new snippet
         current_key="${BASH_REMATCH[1]}"
-        current_display="${BASH_REMATCH[2]}"
         current_text="${BASH_REMATCH[3]}"
     elif [[ -n "$current_key" && ! "$line" =~ ^[[:space:]]*# ]]; then
-        # Continue snippet text (including blank lines)
         current_text+=$'\n'"$line"
     fi
 done < "$SNIPPETS_FILE"
 
-# Save last snippet
 if [[ -n "$current_key" ]]; then
-    snippets_display["$current_key"]="$current_display"
     snippets_text["$current_key"]="$current_text"
 fi
 
-# Build display list - sort by shortcode length (shorter first), then alphabetically
-declare -A display_with_length
-for key in "${!snippets_display[@]}"; do
-    key_length=${#key}
-    padded_length=$(printf "%02d" "$key_length")
-    display_with_length["${padded_length}-${key}"]="$key - ${snippets_display[$key]}"
-done
-
-# Sort by length first, then alphabetically
-display_list=""
-for sort_key in $(printf '%s\n' "${!display_with_length[@]}" | sort); do
-    display_list+="${display_with_length[$sort_key]}"$'\n'
-done
-
-# Show menu and get selection
-selected=$(echo -n "$display_list" | show_menu)
-
-# Exit if nothing selected
-[ -z "$selected" ] && exit 0
-
-# Extract the shortcut from selection (first word before dash)
-shortcut=$(echo "$selected" | awk '{print $1}')
-
-# Increment usage count
-increment_usage "$shortcut"
-
-# Get the snippet text and strip trailing newlines
 snippet_text="${snippets_text[$shortcut]}"
 while [[ "$snippet_text" == *$'\n' ]]; do
     snippet_text="${snippet_text%$'\n'}"
 done
 
-# Always paste everything for consistency
 if [ -n "$snippet_text" ]; then
     echo -n "$snippet_text" | wl-copy
     sleep 0.2

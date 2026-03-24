@@ -27,6 +27,7 @@ cups
 cups-browsed
 cups-filters
 cups-pdf
+cura-bin
 docker
 docker-buildx
 docker-compose
@@ -90,6 +91,7 @@ intel-ucode
 inxi
 iwd
 jellyfin-git
+jome
 jq
 kdeconnect
 kdenlive

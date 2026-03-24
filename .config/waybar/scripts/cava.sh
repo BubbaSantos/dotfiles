@@ -1,48 +1,57 @@
 #!/bin/bash
-
 LOCKFILE="/tmp/waybar-cava.lock"
 PIDFILE="/tmp/waybar-cava.pid"
+PLAYER_STATE_FILE="/tmp/waybar-cava-playing"
 
 cleanup() {
     pkill -P $$ 2>/dev/null
-    rm -f "$PIDFILE" "$LOCKFILE"
+    rm -f "$PIDFILE" "$LOCKFILE" "$PLAYER_STATE_FILE"
     exit 0
 }
-
 trap cleanup EXIT INT TERM
 
-# Kill existing cava
 pkill -9 -f "cava -p" 2>/dev/null
-sleep 0.2
+sleep 0.1
 
-# Try lock
 exec 9>"$LOCKFILE"
 flock -n 9 || exit 1
 
-# Check PID
 if [ -f "$PIDFILE" ]; then
     OLD_PID=$(cat "$PIDFILE" 2>/dev/null)
     [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null && exit 1
 fi
-
 echo $$ > "$PIDFILE"
 
-# Detect source
 SINK=$(pactl get-default-sink 2>/dev/null)
 SOURCE="${SINK:+${SINK}.monitor}"
 [ -z "$SOURCE" ] && SOURCE=$(pactl list sources short | grep monitor | head -1 | awk '{print $2}')
 [ -z "$SOURCE" ] && SOURCE="auto"
 
-# Detect method
 METHOD="pulse"
 pgrep -x pipewire >/dev/null && METHOD="pipewire"
 
-# Run cava
+# Poll player state in background, write to file every 2s
+# Much cheaper than spawning playerctl per-frame
+player_watcher() {
+    while true; do
+        playing=""
+        for p in $(playerctl -l 2>/dev/null); do
+            [ "$(playerctl -p "$p" status 2>/dev/null)" = "Playing" ] && playing="yes" && break
+        done
+        echo "$playing" > "$PLAYER_STATE_FILE"
+        sleep 2
+    done
+}
+player_watcher &
+WATCHER_PID=$!
+
 silent=0
-cava -p <(cat <<EOFCAVA
+
+# stdbuf -oL forces line-buffered output from cava
+stdbuf -oL cava -p <(cat <<EOFCAVA
 [general]
 bars = 8
-framerate = 60
+framerate = 30
 lower_cutoff_freq = 50
 higher_cutoff_freq = 10000
 
@@ -60,44 +69,37 @@ bar_delimiter = 32
 [smoothing]
 monstercat = 1
 waves = 0
-gravity = 150
-noise_reduction = 65
+gravity = 500
+noise_reduction = 55
 EOFCAVA
 ) 2>/dev/null | while IFS= read -r line; do
-    # Player check every 30 frames
-    if [ $((silent % 30)) -eq 0 ]; then
-        playing=""
-        for p in $(playerctl -l 2>/dev/null); do
-            [ "$(playerctl -p "$p" status 2>/dev/null)" = "Playing" ] && playing="yes" && break
-        done
+    playing=$(cat "$PLAYER_STATE_FILE" 2>/dev/null)
+
+    if [ -z "$playing" ]; then
+        echo ""
+        continue
     fi
-    
-    [ -z "$playing" ] && echo "" && continue
-    
-    # Audio check
+
     has_audio=""
     for v in $line; do
-        [ "$v" -gt 0 ] && has_audio="yes" && break
+        [ "$v" -gt 0 ] 2>/dev/null && has_audio="yes" && break
     done
-    
+
     if [ -n "$has_audio" ]; then
         silent=0
         out=""
         for v in $line; do
             case $v in
-                0) out+="▁ ";;
-                1) out+="▂ ";;
-                2) out+="▃ ";;
-                3) out+="▄ ";;
-                4) out+="▅ ";;
-                5) out+="▆ ";;
-                6) out+="▇ ";;
-                7) out+="█ ";;
+                0) out+="▁ ";; 1) out+="▂ ";; 2) out+="▃ ";;
+                3) out+="▄ ";; 4) out+="▅ ";; 5) out+="▆ ";;
+                6) out+="▇ ";; 7) out+="█ ";;
             esac
         done
-        echo "$out"
+        printf '%s\n' "$out"
     else
         ((silent++))
-        [ $silent -ge 300 ] && echo "" || echo "▁ ▁ ▁ ▁ ▁ ▁ ▁ ▁ "
+        [ $silent -ge 150 ] && printf '\n' || printf '▁ ▁ ▁ ▁ ▁ ▁ ▁ ▁ \n'
     fi
 done
+
+kill $WATCHER_PID 2>/dev/null
