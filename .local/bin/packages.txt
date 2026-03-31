@@ -107,6 +107,7 @@ libinput-gestures
 libpulse
 libqalculate
 libreoffice-fresh
+librewolf-bin
 libva-nvidia-driver
 libvncserver
 libyaml
@@ -125,6 +126,7 @@ mako
 man-db
 mariadb-libs
 mediawriter
+micro
 mise
 moonlight-qt
 mpv
