@@ -77,6 +77,7 @@ gum
 gvfs-mtp
 gvfs-nfs
 gvfs-smb
+handy-bin
 hypridle
 hyprland
 hyprland-guiutils
@@ -197,7 +198,6 @@ teams-for-linux-bin
 telepathy-glib
 tigervnc
 tldr
-tobi-try
 tree-sitter-cli
 ttf-cascadia-mono-nerd
 ttf-ia-writer

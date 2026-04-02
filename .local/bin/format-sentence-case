@@ -1,1 +1,14 @@
-404: Not Found
+#!/usr/bin/env bash
+INPUT="$(wl-paste --primary 2>/dev/null)"
+[[ -z "$INPUT" ]] && INPUT="$(wl-paste 2>/dev/null)"
+[[ -z "$INPUT" ]] && exit 1
+
+RESULT=$(python3 -c "
+import sys
+text = sys.stdin.read().rstrip()
+print('. '.join(s.strip().capitalize() for s in text.split('. ')))
+" <<< "$INPUT")
+
+echo -n "$RESULT" | wl-copy
+echo -n "$RESULT" | wl-copy --primary
+wtype "$RESULT"

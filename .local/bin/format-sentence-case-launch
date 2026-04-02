@@ -1,1 +1,19 @@
-404: Not Found
+#!/usr/bin/env bash
+PREV=$(hyprctl activewindow -j | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['address'])")
+
+hyprctl dispatch focuswindow address:$PREV
+sleep 0.2
+wtype -M ctrl -k a -k c -m ctrl
+sleep 0.3
+
+INPUT="$(wl-paste 2>/dev/null)"
+[[ -z "$INPUT" ]] && exit 1
+
+RESULT=$(python3 -c "
+import sys
+text = sys.stdin.read().rstrip()
+print('. '.join(s.strip().capitalize() for s in text.split('. ')))
+" <<< "$INPUT")
+
+echo -n "$RESULT" | wl-copy
+wtype "$RESULT"
