@@ -1,14 +1,14 @@
 #!/bin/bash
-
 # Work Workflow Script
 # Opens applications in designated workspaces
 
-# Function to wait for a window with specific class to appear
+SUPPRESS_FILE="$HOME/.cache/hypr-split-ratio-suppress"
+
 wait_for_window() {
     local class_pattern="$1"
     local max_wait=10
     local count=0
-    
+
     while [ $count -lt $max_wait ]; do
         if hyprctl clients | grep -q "$class_pattern"; then
             return 0
@@ -19,33 +19,29 @@ wait_for_window() {
     return 1
 }
 
-# Launch Vivaldi browser with Midas homepage on workspace 1
-hyprctl dispatch workspace 1
+touch "$SUPPRESS_FILE"
+
+# Launch Vivaldi browser with Midas homepage
 vivaldi https://midaspro.mab.org.uk/Midas.Homepage/ &
-wait_for_window "class.*vivaldi"
-sleep 0.1
+wait_for_window "vivaldi-stable"
+hyprctl dispatch movetoworkspacesilent 1,class:vivaldi-stable
 
-# Launch Outlook on workspace 2
-hyprctl dispatch workspace 2
-uwsm app -- chromium --new-window --ozone-platform=wayland --app="https://outlook.office.com/mail" --force-new-instance &
-wait_for_window "chrome-outlook.office.com"
-sleep 0.1
+# Launch Outlook
+uwsm app -- chromium --new-window --ozone-platform=wayland --app="https://outlook.office.com/mail" --profile-directory="Profile 1" --force-new-instance &
+wait_for_window "chrome-outlook.office.com__mail-Profile_1"
+hyprctl dispatch movetoworkspacesilent 2,class:chrome-outlook.office.com__mail-Profile_1
 
+# Launch Teams for Linux
+uwsm app -- /opt/teams-for-linux/teams-for-linux &
+wait_for_window "teams-for-linux"
+hyprctl dispatch movetoworkspacesilent 3,class:teams-for-linux
 
-# Launch Teams on workspace 3
-hyprctl dispatch workspace 3
-sleep 0.1
-uwsm app -- chromium --new-window --ozone-platform=wayland --app="https://teams.microsoft.com" --force-new-instance &
-wait_for_window "chrome-teams.microsoft.com"
+# Launch Notion
+uwsm app -- chromium --new-window --ozone-platform=wayland --app="https://notion.so" --profile-directory="Profile 1" --force-new-instance &
+wait_for_window "chrome-notion.so__-Profile_1"
+hyprctl dispatch movetoworkspacesilent 4,class:chrome-notion.so__-Profile_1
 
-# Launch Notion on workspace 4
-hyprctl dispatch workspace 4
-sleep 0.1
-uwsm app -- chromium --new-window --ozone-platform=wayland --app="https://notion.so" --force-new-instance &
-wait_for_window "chrome-notion.so"
+rm -f "$SUPPRESS_FILE"
 
-# Return to workspace 1
 hyprctl dispatch workspace 1
-
-# Send notification
 notify-send "Work Workflow" "Applications launched" -t 3000
