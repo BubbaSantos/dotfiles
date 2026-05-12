@@ -1,6 +1,6 @@
 * {
     border: none;
-    font-family: 'JetBrainsMonoNL Nerd Font';
+    font-family: 'JetBrainsMono Nerd Font';
     font-size: 12px;  /* reduced from 14px */
     color: #ebdbb2;  /* gruvbox fg */
     border-radius: 0;
@@ -244,7 +244,7 @@ window#waybar {
 
 #custom-hyprwhspr.recording {
   color: #E75143;
-  font-family: 'JetBrainsMonoNL Nerd Font';
+  font-family: 'JetBrainsMono Nerd Font';
   letter-spacing: 0.5px;     /* Slight spacing for better dot visibility */
 }
 
@@ -374,4 +374,15 @@ tooltip label {
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
   color: #a55555;
+}
+
+#custom-weather {
+  margin-left: 7.5px;
+  margin-right: 7.5px;
+}
+
+#custom-weather.unavailable {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
 }
