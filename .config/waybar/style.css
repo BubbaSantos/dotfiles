@@ -1,6 +1,6 @@
 * {
     border: none;
-    font-family: 'JetBrainsMono Nerd Font';
+    font-family: 'JetBrainsMonoNL Nerd Font';
     font-size: 12px;  /* reduced from 14px */
     color: #ebdbb2;  /* gruvbox fg */
     border-radius: 0;
@@ -244,7 +244,7 @@ window#waybar {
 
 #custom-hyprwhspr.recording {
   color: #E75143;
-  font-family: 'JetBrainsMono Nerd Font';
+  font-family: 'JetBrainsMonoNL Nerd Font';
   letter-spacing: 0.5px;     /* Slight spacing for better dot visibility */
 }
 

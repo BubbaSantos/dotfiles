@@ -10,6 +10,7 @@ base-devel
 bash-completion
 bat
 bc
+betterbird-bin
 bibata-cursor-theme
 bitwarden
 bluetui
@@ -204,6 +205,7 @@ openbsd-netcat
 opencode
 pamixer
 pinta
+piper
 pipewire
 pipewire-alsa
 pipewire-jack
@@ -281,6 +283,7 @@ vpl-gpu-rt
 waybar
 webkit2gtk
 webkit2gtk-4.1
+wev
 wget
 whois
 wireless-regdb
