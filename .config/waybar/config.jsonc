@@ -25,10 +25,6 @@
   "hyprland/workspaces": {
   "on-click": "activate",
   "format": "{name}",
-  "format-icons": {
-    "default": "",
-    "active": ""
-  },
   "persistent-workspaces": {
     "1": [],
     "2": [],
@@ -156,6 +152,13 @@
     "on-click-right": "alacritty --class=Impala -e impala",
     "format-alt": "{essid} {signalStrength}%"
 },
+
+  "custom/fullscreen": {
+  "exec": "~/.local/bin/waybar-fullscreen-status",
+  "return-type": "json",
+  "format": "{}"
+},
+
   "custom/battery": {
     "exec": "~/.config/waybar/scripts/combined-battery.sh",
     "return-type": "json",

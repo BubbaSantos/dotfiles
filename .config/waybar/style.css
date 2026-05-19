@@ -190,6 +190,11 @@ window#waybar {
     color: #fb4934;  /* gruvbox red for weak signal */
 }
 
+#custom-fullscreen.fullscreen {
+  color: #e0af68;
+  padding: 0 8px;
+}
+
 /* Other right modules - default fg color */
 
 #temperature,
