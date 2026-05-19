@@ -1,267 +1,401 @@
-/* Theme: gruvbox-orange */
-/* Generated from template: Wed Nov 19 10:07:00 PM GMT 2025 */
-/* Color Variables */
-@define-color bg_color rgba(40, 40, 40, 0.8);
-@define-color border_color #fe8019;
-@define-color foreground #fe8019;
-@define-color muted_color #d65d0e;
-@define-color active_workspace rgba(254, 128, 25, 0.3);
-@define-color active_text #fe8019;
-@define-color background rgba(40, 40, 40, 0.8);
-/* Waybar Style Template */
-/* Color variables will be injected by the update script */
-/* Run /home/bubba/.config/waybar/waybar-theme-updater.sh after making changes to this template */
-
 * {
-  background-color: transparent;
-  color: @foreground;
-  border: none;
-  border-radius: 0;
-  min-height: 0;
-  font-family: "JetBrainsMono Nerd Font","Font Awesome 6 Free";
-  font-size: 8px;
+    border: none;
+    font-family: 'JetBrainsMonoNL Nerd Font';
+    font-size: 12px;  /* reduced from 14px */
+    color: #ebdbb2;  /* gruvbox fg */
+    border-radius: 0;
 }
 
 window#waybar {
-  background-color: transparent;
+    background: transparent;
+    margin: 3px 6px 1px 6px;  /* was 6px 6px 2px 6px */
+    opacity: 1;
 }
 
-.modules-left {
-  margin-left: 8px;
+/*-----module groups----*/
+.modules-right {
+    background-color: rgba(40, 40, 40, 0.98);  /* gruvbox bg0 */
+    margin: 1px 6px 1px 0;  /* was 2px 6px 2px 0 */
+    border-radius: 10px;
+    padding: 0px 3px;
 }
 
 .modules-center {
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius: 20px;
-  padding: 1px 10px;
-  margin: 0 1px;
+    background-color: rgba(40, 40, 40, 0.98);  /* gruvbox bg0 */
+    margin: 1px 0 1px 0;  /* was 2px 0 2px 0 */
+    border-radius: 10px;
+    padding: 0px 0px;
 }
 
-.modules-right {
-  margin-right: 8px;
+.modules-left {
+    margin: 1px 0 1px 6px;  /* was 2px 0 2px 6px */
+    background-color: rgba(40, 40, 40, 0.98);  /* gruvbox bg0 */
+    border-radius: 10px;
+    padding: 0px 3px;
 }
 
-/* Consistent spacing for all modules */
-#workspaces,
-#clock,
-#battery,
-#custom-battery,
-#pulseaudio,
-#custom-expand-icon,
-#tray-expander,
-#custom-omarchy,
-#hardware,
-#custom-update,
-#custom-mako {
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius: 20px;
-  padding: 1px 10px;
-  margin: 0 1px;
-}
-
-#hardware {
-  padding: 1px 4px;
-}
-
-/* Workspaces specific styling */
-#workspaces {
-  padding: 1px 8px;
-}
-
+/*-----modules indv----*/
 #workspaces button {
-  all: initial;
-  padding: 0 6px;
-  margin: 0 1px;
-  min-width: 9px;
-  color: @foreground;
-  background-color: transparent;
+    background-color: transparent;
+    color: rgba(235, 219, 178, 0.6);  /* gruvbox fg dimmed */
+    border: 2px solid transparent;
+    border-radius: 0;
+    padding: 0 8px;
+    margin: 0;
+    transition: all 0.3s ease-in-out;
 }
-
-#workspaces button.empty {
-  opacity: 0.5;
+#workspaces button:hover {
+    background-color: rgba(60, 56, 54, 0.3);  /* gruvbox bg1 */
+    color: #ebdbb2;  /* gruvbox fg */
+    border: 2px solid transparent;
+    border-radius: 8px;
+    transition: all 0.3s ease-in-out;
 }
-
 #workspaces button.active {
-  background: @active_workspace;
-  color: @active_text;
-  border-radius: 20px;
-  transition: all 0.3s cubic-bezier(0.55, -0.68, 0.48, 1.682);
+    background-color: #d79921;  /* gruvbox yellow */
+    color: #282828;  /* gruvbox bg */
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid rgba(20, 20, 20, 1);
+    padding: 0 14px;
+    min-width: 36px;
+    transition: all 0.3s ease-in-out;
 }
-
-#workspaces button label {
-  font-size: 12px;
+#workspaces button.empty {
+    background-color: transparent;
+    color: rgba(235, 219, 178, 0.25);  /* gruvbox fg very dimmed */
+    border: 2px solid transparent;
+    opacity: 0.5;
+    transition: all 0.3s ease-in-out;
 }
-
-/* Special workspaces styling */
+#workspaces button.empty:hover {
+    opacity: 1;
+    background-color: rgba(60, 56, 54, 0.2);  /* gruvbox bg1 */
+    color: rgba(235, 219, 178, 0.7);  /* gruvbox fg slightly dimmed */
+    border: 2px solid transparent;
+    border-radius: 12px;
+}
+#workspaces button.empty.active {
+    background-color: #d79921;  /* gruvbox yellow */
+    color: #282828;  /* gruvbox bg */
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid rgba(20, 20, 20, 1);
+    padding: 0 14px;
+    min-width: 36px;
+    opacity: 1;
+}
 #workspaces button.special {
-  background: #fe8019;
-  color: @background;
-  border-radius: 20px;
+    background-color: #689d6a;  /* gruvbox aqua */
+    color: #282828;  /* gruvbox bg */
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid rgba(20, 20, 20, 1);
+    padding: 0 14px;
+    min-width: 36px;
 }
 #workspaces button.special.active {
-  background: #d65d0e;
-  color: @foreground;
-  border-radius: 20px;
+    background-color: #8ec07c;  /* gruvbox bright aqua */
+    color: #282828;  /* gruvbox bg */
+    font-weight: bold;
+    border-radius: 10px;
+    border: 2px solid rgba(20, 20, 20, 1);
+    padding: 0 14px;
+    min-width: 36px;
+    transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
-/* Battery states */
-#custom-battery {
-  padding: 1px 14px 1px 10px;
-}
-
-#battery.warning,
-#custom-battery.warning {
-  color: #ffb86c;
-}
-
-#battery.critical,
-#custom-battery.critical {
-  color: #ff5555;
-}
-
-#battery.charging,
-#custom-battery.charging {
-  color: #50fa7b;
-}
-
-/* Pulseaudio specific styling */
-#pulseaudio {
-  padding: 1px 14px 1px 10px;
-}
-
-#pulseaudio.muted {
-  color: @muted_color;
-}
-
-/* Custom expand icon */
+/* Left modules - all default text color */
+#custom-cava,
+#custom-nowplaying,
+#pulseaudio,
+#custom-power,
+#custom-menu,
 #custom-expand-icon {
-  padding: 1px 6px;
-  font-size: 14px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
 }
 
-/* Tray expander container */
-#tray-expander #tray,
-#tray-expander #custom-remmina,
-#tray-expander #custom-expand-icon {
-  background-color: transparent;
-  border: none;
-  padding: 0 6px;
-  margin: 0 2px;
+#custom-hyprwhspr { 
+    padding: 1px 0px 1px 10px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
+    text-decoration: none;
+    border-bottom: none;
 }
 
-#network {
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius: 20px;
-  padding: 1px 14px 1px 10px;
-  margin: 0 1px;
+#custom-expand-icon {
+    padding: 1px 12px 1px 10px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
 }
 
-/* Bluetooth pill */
+/* Right modules - all default text color */
+#clock {
+    padding: 1px 8px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
+}
+
+/* Battery - default adequate state */
+#battery,
+#custom-battery {
+    padding: 1px 12px 1px 4px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
+}
+
+/* Battery color states */
+#custom-battery.warning,
+#battery.warning {
+    color: #fabd2f;  /* gruvbox bright yellow/amber for low power */
+}
+
+@keyframes blink-critical {
+    0%   { opacity: 1; }
+    92%  { opacity: 1; }
+    99%  { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+#custom-battery.critical,
+#battery.critical {
+    color: #fb4934;
+    animation: blink-critical 1.5s ease-in-out infinite;
+}
+
+#custom-battery.charging,
+#battery.charging {
+    color: #8EC07C;  /* gruvbox bright green for charging */
+}
+
+/* Bluetooth - default color, blue when connected */
 #bluetooth {
-  font-size: 15px;
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius: 20px;
-  padding: 1px 10px;
-  margin: 0 1px;
+    padding: 1px 2px 1px 6px;
+    color: #ebdbb2;  /* gruvbox fg */
 }
 
 #bluetooth.connected {
-  color: #fe8019;
+    color: #83a598;  /* gruvbox blue when connected */
 }
 
-/* Hardware module internal items */
-#hardware #custom-hardware-icon,
-#hardware #cpu,
-#hardware #memory,
-#hardware #disk {
-  background-color: transparent;
-  border: none;
-  padding: 0 4px;
-  margin: 0 2px;
+/* Network - default color, red when signal < 30% */
+#network {
+    padding: 1px 10px 1px 0px;
+    color: #ebdbb2;  /* gruvbox fg */
 }
 
-/* Tooltip styling */
-tooltip {
-  background-color: rgba(0, 0, 0, 0.9);
+#network.disconnected,
+#network.weak {
+    color: #fb4934;  /* gruvbox red for weak signal */
+}
+
+#custom-fullscreen.active {
+  background-color: #a3be8c;
+  color: #2e3440;
+  padding: 0 10px;
+  margin: 2px 4px;
   border-radius: 8px;
-  padding: 6px 8px;
-  color: @foreground;
 }
 
-/* Tray tooltip specific styling */
-#tray tooltip {
-  background-color: rgba(0, 0, 0, 0.9);
-  border-radius: 8px;
-  padding: 6px 8px;
-  color: #fe8019;
-}
-
-#tray tooltip label {
-  color: #fe8019;
-}
-
-#custom-mako {
-  font-size: 12px;
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius:20px;
-  padding: 5px 5px;
-  margin: 0 1px;
-  min-width: 20px;
-  min-height: 20px;
-}
-
-#custom-mako.dnd-active {
-  color: #d65d0e;
-}
-
-#custom-mako.notification {
-  color: #fe8019;
-}
-
-#custom-mako.normal {
-  color: @foreground;
-}
-
-/* Media modules inside center container */
-#custom-cava,
-#custom-nowplaying {
-  background-color: transparent;
-  border: none;
-  padding: 4px 6px;
+#custom-fullscreen.inactive {
+  padding: 0;
   margin: 0;
+}
+
+/* Other right modules - default fg color */
+
+#temperature,
+#custom-media,
+#tray,
+#mode,
+#idle_inhibitor,
+#custom-mako,
+#hardware,
+#custom-omarchy,
+#custom-nowplaying,
+#custom-update,
+#custom-mic-toggle {
+    padding: 1px 8px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
+}
+#cpu,
+#memory,
+#disk {
+  padding: 1px 8px 1px 0px;
+  color: #759286;
+}
+
+#mode {
+    color: #ebdbb2;  /* gruvbox fg */
+    font-weight: bold;
+}
+
+/* hyprwhspr */
+#custom-hyprwhspr { 
+  padding: 1px 10px 1px 1px;
+  text-decoration: none;
+  border-bottom: none;
+}
+/* hyprwhspr Waybar Styling - Waybar Compatible */
+
+/* Base styles - same icon for all states, only colors change */
+#custom-hyprwhspr {
+  margin: 0 16px 0 0;
+  font-size: 11px;
+  font-weight: bold;
+  border-top: 2px solid transparent;
+  border-bottom: 2px solid transparent;
+  transition: color 150ms ease-in-out, border-color 150ms ease-in-out;
+}
+
+#custom-hyprwhspr.ready {
+  color: inherit;
+  border-color: transparent;
+}
+
+#custom-hyprwhspr.recording {
+  color: #E75143;
+  font-family: 'JetBrainsMonoNL Nerd Font';
+  letter-spacing: 0.5px;     /* Slight spacing for better dot visibility */
+}
+
+#custom-hyprwhspr.stopped {
+  color: inherit;
+  border-color: transparent;
+}
+
+#custom-hyprwhspr.error {
+  color: #d97706;
+  border-bottom-color: #d97706;
+}
+
+/* Hover effects - Waybar doesn't support filter, so we use opacity instead */
+#custom-hyprwhspr:hover,
+#workspaces button:hover,
+#clock:hover,
+#battery:hover,
+#custom-battery:hover,
+#bluetooth:hover,
+#network:hover,
+#pulseaudio:hover,
+#custom-audio-output:hover,
+#custom-mic-toggle:hover,
+#custom-nowplaying:hover,
+#custom-cava:hover,
+#custom-update:hover,
+#custom-omarchy:hover,
+#custom-mako:hover,
+#custom-menu:hover,
+#custom-power:hover,
+#custom-expand-icon:hover,
+#temperature:hover,
+#cpu:hover,
+#memory:hover,
+#disk:hover,
+#mode:hover,
+#idle_inhibitor:hover {
+  opacity: 0.6;
+}
+
+#pulseaudio {
+    padding: 1px 14px 1px 0px;
+    color: #ebdbb2;  /* gruvbox fg */
+}
+#custom-hyprwhspr{
+    padding: 1px 1px 1px 10px;
+    color: #ebdbb2;  /* gruvbox fg */
+}
+
+#pulseaudio.muted {
+    color: #fb4934;  /* gruvbox red */
+}
+
+#custom-audio-output {
+    padding: 1px 14px 1px 6px;
+    color: #ebdbb2;  /* gruvbox fg */
+}
+
+#custom-hardware-icon {
+    padding-right: 6px;
+}
+
+.hardware-group-item {
+    background-color: transparent;
+}
+
+#tray {
+    padding: 2px 8px 2px 14px;
+    color: #ebdbb2;  /* gruvbox fg */
+}
+
+#custom-mic-toggle{
+    padding: 2px 8px 2px 14px;
+    color: #ebdbb2;  /* gruvbox fg */
+}
+#hardware{
+  color: #3C3836;
+}
+
+#disk{
+    padding: 2px 8px 2px 14px;
+}
+
+tooltip {
+    background: rgba(40, 40, 40, 0.98);  /* gruvbox bg0 */
+    border: none;
+}
+
+tooltip label {
+    color: #ebdbb2;  /* gruvbox fg */
 }
 
 #custom-cava {
-  font-size: 8px;
-  letter-spacing: -1px;
+    padding: 1px 0px 1px 12px;
+    color: #b16286;  /* gruvbox fg */
+    background-color: transparent;
+    font-size: 6px;
+    letter-spacing: -1px;
+}
+
+#custom-nowplaying {
+    padding: 1px 10px 1px 1px;
+    color: #ebdbb2;  /* gruvbox fg */
+    background-color: transparent;
 }
 
 #custom-nowplaying.stopped {
-  padding: 0;
-  margin: 0;
-  min-width: 0;
+    padding: 0;
+    margin: 0;
+    min-width: 0;
 }
 
 #custom-nowplaying.paused {
-  color: #d65d0e;
+    color: rgba(235, 219, 178, 0.5);  /* gruvbox fg darker/dimmed */
 }
 
-#group-right-panel {
-  background-color: @bg_color;
-  border: 1px solid @border_color;
-  border-radius: 20px;
-  padding: 1px 10px;
-  margin: 0 1px;
+#custom-voxtype {
+    min-width: 12px;
+    margin: 0 0 0 7.5px;
 }
 
-#group-right-panel > * {
+#custom-voxtype.recording {
+    color: #fb4934;  /* gruvbox red */
+}
+
+#custom-idle-indicator.active,
+#custom-notification-silencing-indicator.active {
+  color: #a55555;
+}
+
+#custom-weather {
+  margin-left: 7.5px;
+  margin-right: 7.5px;
+}
+
+#custom-weather.unavailable {
+  min-width: 0;
   margin: 0;
   padding: 0;
-  background-color: transparent;
-  border: none;
 }

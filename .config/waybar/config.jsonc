@@ -11,7 +11,8 @@
     "pulseaudio"
   ],
   "modules-center": [
-    "hyprland/workspaces"
+    "hyprland/workspaces",
+    "custom/fullscreen"
   ],
   "modules-right": [
     "group/tray-expander",
