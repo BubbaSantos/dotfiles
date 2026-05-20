@@ -186,6 +186,7 @@ nautilus
 nautilus-python
 neovim
 nmap
+noctalia-shell
 noise-suppression-for-voice
 nomachine
 noto-fonts
