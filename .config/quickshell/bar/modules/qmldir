@@ -1,0 +1,11 @@
+Bar 1.0 Bar.qml
+Workspaces 1.0 Workspaces.qml
+Clock 1.0 Clock.qml
+Network 1.0 Network.qml
+Bluetooth 1.0 Bluetooth.qml
+Pulseaudio 1.0 Pulseaudio.qml
+Battery 1.0 Battery.qml
+Tray 1.0 Tray.qml
+NowPlaying 1.0 NowPlaying.qml
+TodosIndicator 1.0 TodosIndicator.qml
+RemindersIndicator 1.0 RemindersIndicator.qml
