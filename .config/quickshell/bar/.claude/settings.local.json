@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c ' *)",
+      "Bash(hyprctl clients *)",
+      "Bash(python3 -c \"import sys,json; clients=json.load\\(sys.stdin\\); [print\\(list\\(c.keys\\(\\)\\)\\) for c in clients[:2]]\")",
+      "Bash(playerctl -l)",
+      "Bash(playerctl -a metadata)",
+      "Bash(python3 *)",
+      "Bash(grep -v \"^$\")",
+      "Bash(xdg-settings get *)"
+    ]
+  }
+}
