@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs
+import qs.services
 
 PanelWindow {
     id: root
@@ -28,6 +29,8 @@ PanelWindow {
         root.anchorItem = anchor
         root.visible = true
     }
+
+    onVisibleChanged: if (visible) PopupManager.open(root)
     function close() {
         root.visible = false
         root.trayItem = null
@@ -85,6 +88,14 @@ PanelWindow {
             anchors.fill: parent
             onClicked: {}
         }
+
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
 
         ColumnLayout {
             id: menuColumn

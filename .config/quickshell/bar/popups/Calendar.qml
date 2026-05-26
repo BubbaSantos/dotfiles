@@ -38,6 +38,8 @@ PanelWindow {
     }
     function close() { visible = false }
 
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
     function prevMonth() {
         if (viewMonth === 0) {
             viewMonth = 11
@@ -126,14 +128,27 @@ PanelWindow {
             onClicked: {}
         }
 
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+
         Item {
             anchors.fill: parent
             focus: root.visible
             Keys.onPressed: function(event) {
-                if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
-                else if (event.key === Qt.Key_Left) { root.prevMonth(); event.accepted = true }
-                else if (event.key === Qt.Key_Right) { root.nextMonth(); event.accepted = true }
-                else if (event.key === Qt.Key_T) { root.goToday(); event.accepted = true }
+                if      (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
+                else if (event.key === Qt.Key_Left)   { root.prevMonth(); event.accepted = true }
+                else if (event.key === Qt.Key_Right)  { root.nextMonth(); event.accepted = true }
+                else if (event.key === Qt.Key_G)      { root.goToday(); event.accepted = true }
+                else if (event.key === Qt.Key_U)      { root.close(); todosPopup.open_(); event.accepted = true }
+                else if (event.key === Qt.Key_R)      { root.close(); remindersPopup.open_(); event.accepted = true }
+                else if (event.key === Qt.Key_P)      { root.close(); pomodoroPopup.open_(); event.accepted = true }
+                else if (event.key === Qt.Key_S)      { root.close(); stopwatchPopup.open_(); event.accepted = true }
+                else if (event.key === Qt.Key_T)      { root.close(); timerPopup.open_(); event.accepted = true }
             }
         }
 
@@ -378,7 +393,7 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
-                text: "← → months · T today · Esc close"
+                text: "← → months · G today · U R P S T open tools · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9

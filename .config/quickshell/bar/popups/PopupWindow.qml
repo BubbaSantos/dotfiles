@@ -2,6 +2,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Wayland
 import qs
+import qs.services
 
 PanelWindow {
     id: root
@@ -22,8 +23,12 @@ PanelWindow {
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
 
+    property bool keepOpen: false
+
     function toggle() { visible = !visible }
     function close()  { visible = false }
+
+    onVisibleChanged: if (visible) PopupManager.open(root)
 
     // Click-outside-to-close
     MouseArea {
@@ -47,7 +52,7 @@ PanelWindow {
         color: Theme.barBg
         radius: 14
         border.width: 1
-        border.color: Qt.rgba(1, 1, 1, 0.06)
+        border.color: "#f38c6f"
 
         opacity: root.visible ? 1 : 0
         scale: root.visible ? 1 : 0.96
@@ -58,6 +63,18 @@ PanelWindow {
         MouseArea {
             anchors.fill: parent
             onClicked: {}
+        }
+
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer {
+            id: autoCloseTimer
+            interval: 2000
+            onTriggered: if (!root.keepOpen) root.close()
         }
 
         Item {

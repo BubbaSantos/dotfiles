@@ -24,6 +24,8 @@ PanelWindow {
     function toggle() { visible = !visible }
     function close()  { visible = false }
 
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
     readonly property var items: [
         { label: "Calendar",   icon: "󰸗", key: "calendar" },
         { label: "Todos",      icon: "󰄬", key: "todos" },
@@ -77,14 +79,25 @@ PanelWindow {
             onClicked: {}
         }
 
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+
         Item {
             anchors.fill: parent
             focus: root.visible
             Keys.onPressed: function(event) {
-                if (event.key === Qt.Key_Escape) {
-                    root.close()
-                    event.accepted = true
-                }
+                if      (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
+                else if (event.key === Qt.Key_C)      { root.openItem("calendar"); event.accepted = true }
+                else if (event.key === Qt.Key_U)      { root.openItem("todos"); event.accepted = true }
+                else if (event.key === Qt.Key_R)      { root.openItem("reminders"); event.accepted = true }
+                else if (event.key === Qt.Key_P)      { root.openItem("pomodoro"); event.accepted = true }
+                else if (event.key === Qt.Key_S)      { root.openItem("stopwatch"); event.accepted = true }
+                else if (event.key === Qt.Key_T)      { root.openItem("timer"); event.accepted = true }
             }
         }
 
@@ -138,13 +151,10 @@ PanelWindow {
         }
     }
 
-    // Sub-popups (these will be stub-anchored to the clock for now)
-    Calendar { id: calendarPopup; anchorItem: root.anchorItem }
-    // The others get added as we build them. For now, alias them to calendar
-    // so the menu compiles. Replace these as we create real popups.
-    Calendar { id: todosPopup; anchorItem: root.anchorItem }
-    Calendar { id: remindersPopup; anchorItem: root.anchorItem }
-    Calendar { id: pomodoroPopup; anchorItem: root.anchorItem }
-    Calendar { id: stopwatchPopup; anchorItem: root.anchorItem }
-    Calendar { id: timerPopup; anchorItem: root.anchorItem }
+    Calendar  { id: calendarPopup;  anchorItem: root.anchorItem }
+    Todos     { id: todosPopup;     anchorItem: root.anchorItem }
+    Reminders { id: remindersPopup; anchorItem: root.anchorItem }
+    Pomodoro  { id: pomodoroPopup;  anchorItem: root.anchorItem }
+    Stopwatch { id: stopwatchPopup; anchorItem: root.anchorItem }
+    TimerPopup { id: timerPopup;   anchorItem: root.anchorItem }
 }

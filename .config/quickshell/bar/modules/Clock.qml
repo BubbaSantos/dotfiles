@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import qs
 import qs.popups
 
@@ -62,5 +63,11 @@ Rectangle {
     Calendar {
         id: calendarPopup
         anchorItem: root
+    }
+
+    GlobalShortcut {
+        name: "toggleCalendar"
+        description: "Toggle the calendar popup"
+        onPressed: calendarPopup.toggle()
     }
 }

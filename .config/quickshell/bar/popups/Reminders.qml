@@ -46,6 +46,40 @@ PanelWindow {
     }
     function toggle() { if (visible) close(); else open_() }
 
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
+    property int focusIndex: 0
+    property string focusZone: "fired"  // "fired" | "upcoming"
+
+    function focusedReminder() {
+        const list = focusZone === "fired" ? firedReminders : upcomingReminders
+        if (focusIndex < 0 || focusIndex >= list.length) return null
+        return list[focusIndex]
+    }
+    function clampFocus() {
+        const list = focusZone === "fired" ? firedReminders : upcomingReminders
+        focusIndex = Math.max(0, Math.min(focusIndex, list.length - 1))
+    }
+    function dismissFocused() {
+        const r = focusedReminder()
+        if (!r) return
+        const next = TimepiecesStore.reminders.filter(x => x.id !== r.id)
+        TimepiecesStore.reminders = next
+        TimepiecesStore.save()
+        clampFocus()
+    }
+    function snoozeFocused(minutes) {
+        const r = focusedReminder()
+        if (!r) return
+        const dt = new Date(Date.now() + minutes * 60000)
+        const next = TimepiecesStore.reminders.map(x => x.id === r.id
+            ? Object.assign({}, x, { triggerAt: dt.toISOString(), state: "pending", firedAt: "" })
+            : x)
+        TimepiecesStore.reminders = next
+        TimepiecesStore.save()
+        clampFocus()
+    }
+
     function resetAddForm() {
         newText = ""
         const now = new Date()
@@ -211,11 +245,41 @@ PanelWindow {
             }
         }
 
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+
         Item {
             anchors.fill: parent
             focus: root.visible && !root.addingNew
             Keys.onPressed: function(event) {
-                if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
+                if (event.key === Qt.Key_Escape) {
+                    if (root.snoozingId) { root.snoozingId = ""; event.accepted = true; return }
+                    root.close(); event.accepted = true
+                } else if (event.key === Qt.Key_N) {
+                    root.openAddForm(); event.accepted = true
+                } else if (event.key === Qt.Key_J || event.key === Qt.Key_Down) {
+                    const list = root.focusZone === "fired" ? root.firedReminders : root.upcomingReminders
+                    root.focusIndex = Math.min(root.focusIndex + 1, list.length - 1)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_K || event.key === Qt.Key_Up) {
+                    root.focusIndex = Math.max(root.focusIndex - 1, 0)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Tab) {
+                    root.focusZone = root.focusZone === "fired" ? "upcoming" : "fired"
+                    root.focusIndex = 0
+                    event.accepted = true
+                } else if (event.key === Qt.Key_D || event.key === Qt.Key_Delete) {
+                    root.dismissFocused(); event.accepted = true
+                } else if (event.key === Qt.Key_S) {
+                    root.snoozeFocused(15); event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    root.dismissFocused(); event.accepted = true
+                }
             }
         }
 
@@ -721,10 +785,13 @@ PanelWindow {
                 delegate: Rectangle {
                     id: firedDelegate
                     required property var modelData
+                    required property int index
                     width: firedList.width
                     height: root.snoozingId === modelData.id ? 72 : 44
                     radius: 6
-                    color: Qt.rgba(251/255, 73/255, 52/255, 0.12)
+                    color: (root.focusZone === "fired" && index === root.focusIndex)
+                           ? Qt.rgba(251/255, 73/255, 52/255, 0.22)
+                           : Qt.rgba(251/255, 73/255, 52/255, 0.12)
                     border.width: 1
                     border.color: Qt.rgba(251/255, 73/255, 52/255, 0.4)
                     Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
@@ -891,10 +958,13 @@ PanelWindow {
 
                 delegate: Rectangle {
                     required property var modelData
+                    required property int index
                     width: upcomingList.width
                     height: 36
                     radius: 4
-                    color: rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
+                    color: (root.focusZone === "upcoming" && index === root.focusIndex)
+                           ? Qt.rgba(1, 1, 1, 0.10)
+                           : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent")
                     Behavior on color { ColorAnimation { duration: 150 } }
 
                     RowLayout {
@@ -989,7 +1059,7 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
-                text: "Enter to save · Esc to close"
+                text: "j/k navigate · Enter/D dismiss · S snooze 15m · Tab switch · N new · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9

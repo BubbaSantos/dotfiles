@@ -1,6 +1,8 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Services.Pipewire
 import qs
 import qs.services
 import qs.popups
@@ -8,38 +10,115 @@ import qs.popups
 Rectangle {
     id: root
     Layout.preferredHeight: 22
-    Layout.preferredWidth: ActivePlayer.hasPlayer ? row.implicitWidth + 16 : 0
-    visible: ActivePlayer.hasPlayer
+    Layout.preferredWidth: row.implicitWidth + 12
     color: mouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
     radius: 6
 
     Behavior on color { ColorAnimation { duration: Theme.animFast } }
-    Behavior on Layout.preferredWidth { NumberAnimation { duration: Theme.animNormal } }
+    Behavior on Layout.preferredWidth { NumberAnimation { duration: Theme.animFast } }
+
+    readonly property var sink: Pipewire.defaultAudioSink
+    readonly property real vol:   sink ? sink.audio.volume : 0
+    readonly property bool muted: sink ? sink.audio.muted  : false
+    PwObjectTracker { objects: root.sink ? [root.sink] : [] }
+
+    readonly property bool playerMode: ActivePlayer.hasPlayer && (
+        ActivePlayer.isPlaying ||
+        (ActivePlayer.trackTitle  || "").length > 0 ||
+        (ActivePlayer.trackArtist || "").length > 0
+    )
 
     RowLayout {
         id: row
         anchors.centerIn: parent
         spacing: 6
 
+        // ── Player section (shown when playerMode) ───────────────────
         Text {
-            text: ActivePlayer.isPlaying ? "" : ""
-            color: ActivePlayer.isPlaying ? Theme.fg : Theme.fgDim
+            visible: root.playerMode
+            text: ActivePlayer.isPlaying ? "󰐊" : "󰏤"
+            color: ActivePlayer.isPlaying ? Theme.green : Theme.fgDim
             font.family: Theme.fontFamily
-            font.pixelSize: Theme.fontSize
+            font.pixelSize: Theme.fontSizeIcon
+            Behavior on color { ColorAnimation { duration: 200 } }
         }
-        Text {
-            text: {
-                if (!ActivePlayer.hasPlayer) return ""
-                const p = ActivePlayer.player
-                const title = p.trackTitle || "Unknown"
-                const artist = p.trackArtist || ""
-                return artist ? `${artist} — ${title}` : title
+
+        Item {
+            id: titleClip
+            visible: root.playerMode
+            readonly property int maxW: 240
+            readonly property int overflow: Math.max(0, titleText.implicitWidth - maxW)
+            Layout.preferredWidth: Math.min(titleText.implicitWidth, maxW)
+            Layout.alignment: Qt.AlignVCenter
+            height: titleText.implicitHeight
+            clip: true
+
+            Text {
+                id: titleText
+                text: {
+                    const t = ActivePlayer.trackTitle  || ""
+                    const a = ActivePlayer.trackArtist || ""
+                    if (!t && !a) return "—"
+                    if (a) return a + " — " + t
+                    return t
+                }
+                color: Theme.fg
+                font.family: Theme.fontFamily
+                font.pixelSize: Theme.fontSize
+
+                onImplicitWidthChanged: {
+                    scrollAnim.stop()
+                    x = 0
+                    if (titleClip.overflow > 0 && Theme.nowPlayingScroll) scrollAnim.start()
+                }
+
+                Connections {
+                    target: Theme
+                    function onNowPlayingScrollChanged() {
+                        scrollAnim.stop()
+                        titleText.x = 0
+                        if (Theme.nowPlayingScroll && titleClip.overflow > 0) scrollAnim.start()
+                    }
+                }
+
+                SequentialAnimation {
+                    id: scrollAnim
+                    loops: Animation.Infinite
+                    PauseAnimation  { duration: 2000 }
+                    NumberAnimation {
+                        target: titleText; property: "x"
+                        to: -titleClip.overflow
+                        duration: titleClip.overflow * 30
+                        easing.type: Easing.Linear
+                    }
+                    PauseAnimation  { duration: 1500 }
+                    NumberAnimation { target: titleText; property: "x"; to: 0; duration: 0 }
+                }
             }
-            color: ActivePlayer.isPlaying ? Theme.fg : Theme.fgDim
+        }
+
+        // Divider
+        Rectangle {
+            visible: root.playerMode
+            width: 1; height: 10
+            color: Qt.rgba(1, 1, 1, 0.2)
+            Layout.alignment: Qt.AlignVCenter
+        }
+
+        // ── Volume section (always shown) ─────────────────────────────
+        Text {
+            text: root.muted ? "󰝟" : root.vol > 0.6 ? "󰕾" : root.vol > 0.2 ? "󰖀" : "󰕿"
+            color: root.muted ? Theme.red : Theme.fgDim
+            font.family: Theme.fontFamily
+            font.pixelSize: Theme.fontSizeIcon
+            Behavior on color { ColorAnimation { duration: Theme.animFast } }
+        }
+
+        Text {
+            text: root.muted ? "muted" : Math.round(root.vol * 100) + "%"
+            color: root.muted ? Theme.red : Theme.fg
             font.family: Theme.fontFamily
             font.pixelSize: Theme.fontSize
-            elide: Text.ElideRight
-            Layout.maximumWidth: 280
         }
     }
 
@@ -49,13 +128,40 @@ Rectangle {
         hoverEnabled: true
         cursorShape: Qt.PointingHandCursor
         acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-        onClicked: (ev) => {
-            if (!ActivePlayer.hasPlayer) return
-            if (ev.button === Qt.LeftButton) mediaPopup.toggle()
-            else if (ev.button === Qt.RightButton) ActivePlayer.player.next()
-            else if (ev.button === Qt.MiddleButton) ActivePlayer.player.playPause()
+
+        onClicked: function(ev) {
+            const p = ActivePlayer.current
+            if (ev.button === Qt.LeftButton) {
+                if (root.playerMode && p && p.canTogglePlaying)
+                    p.isPlaying = !p.isPlaying
+                else if (root.sink)
+                    root.sink.audio.muted = !root.sink.audio.muted
+            } else if (ev.button === Qt.RightButton) {
+                mediaPopup.toggle()
+            } else if (ev.button === Qt.MiddleButton) {
+                if (p && p.canGoNext) p.next()
+            }
+        }
+
+        onWheel: function(ev) {
+            const p = ActivePlayer.current
+            const delta = ev.angleDelta.y > 0 ? 0.05 : -0.05
+            if (root.playerMode && p) {
+                p.volume = Math.max(0, Math.min(1, (p.volume || 0) + delta))
+            } else if (root.sink) {
+                root.sink.audio.volume = Math.max(0, Math.min(1.5, root.vol + delta))
+            }
         }
     }
 
-    MediaPlayer { id: mediaPopup; anchorItem: root }
+    MediaPlayer {
+        id: mediaPopup
+        anchorItem: root
+    }
+
+    GlobalShortcut {
+        name: "toggleMediaPlayer"
+        description: "Toggle the media player popup"
+        onPressed: mediaPopup.toggle()
+    }
 }

@@ -33,10 +33,15 @@ QtObject {
         if (ready) adapter.enabled = on
     }
     function startScan() {
-        if (ready) adapter.discovering = true
+        if (!ready) return
+        try {
+            adapter.pairable = true
+            adapter.discovering = true
+        } catch(e) {}
     }
     function stopScan() {
-        if (ready) adapter.discovering = false
+        if (!ready || !adapter.discovering) return
+        try { adapter.discovering = false } catch(e) {}
     }
     function setDiscoverable(on) {
         if (ready) adapter.discoverable = on

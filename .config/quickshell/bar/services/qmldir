@@ -3,4 +3,5 @@ singleton ActivePlayer 1.0 ActivePlayer.qml
 singleton WifiService 1.0 WifiService.qml
 singleton BluetoothService 1.0 BluetoothService.qml
 singleton TimepiecesStore 1.0 TimepiecesStore.qml
-singleton TimepiecesStore 1.0 TimepiecesStore.qml
+singleton PopupManager 1.0 PopupManager.qml
+singleton NotifService 1.0 NotifService.qml

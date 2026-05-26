@@ -42,7 +42,6 @@ PanelWindow {
                 spacing: 0
 
                 NowPlaying {}
-                Pulseaudio {}
             }
         }
 
@@ -84,6 +83,7 @@ PanelWindow {
                 Bluetooth {}
                 RemindersIndicator {}
                 TodosIndicator {}
+                NotifIndicator {}
                 Clock {}
                 Battery {}
             }

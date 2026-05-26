@@ -5,6 +5,7 @@ import Quickshell
 import Quickshell.Wayland
 import Quickshell.Services.UPower
 import qs
+import qs.services
 
 PanelWindow {
     id: root
@@ -23,6 +24,8 @@ PanelWindow {
 
     function toggle() { visible = !visible }
     function close()  { visible = false }
+
+    onVisibleChanged: if (visible) PopupManager.open(root)
 
     Timer {
         id: closeTimer
@@ -116,6 +119,14 @@ PanelWindow {
             anchors.fill: parent
             onClicked: {}
         }
+
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
 
         // Keyboard shortcuts when popup is open
         Item {

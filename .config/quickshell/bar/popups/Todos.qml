@@ -68,6 +68,8 @@ PanelWindow {
     }
     function toggle() { if (visible) close(); else open_() }
 
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
     readonly property var allCategoryNames: {
         const set = new Set(["Work", "Personal"])
         for (const t of TimepiecesStore.todos) {
@@ -331,6 +333,14 @@ PanelWindow {
                 root.newCatDropdownOpen = false
             }
         }
+
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent

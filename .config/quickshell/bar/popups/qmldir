@@ -13,3 +13,5 @@ TimerPopup 1.0 TimerPopup.qml
 ControlCenter 1.0 ControlCenter.qml
 Notifications 1.0 Notifications.qml
 SystemMonitor 1.0 SystemMonitor.qml
+NotifHub 1.0 NotifHub.qml
+NotifToast 1.0 NotifToast.qml

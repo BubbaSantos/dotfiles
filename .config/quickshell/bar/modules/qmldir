@@ -9,3 +9,4 @@ Tray 1.0 Tray.qml
 NowPlaying 1.0 NowPlaying.qml
 TodosIndicator 1.0 TodosIndicator.qml
 RemindersIndicator 1.0 RemindersIndicator.qml
+NotifIndicator 1.0 NotifIndicator.qml

@@ -2,6 +2,7 @@ import "."
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 import Quickshell.Bluetooth
 import qs
@@ -27,12 +28,58 @@ PanelWindow {
         else open_()
     }
     function open_() {
-        if (BluetoothService.powered) BluetoothService.startScan()
+        if (BluetoothService.powered) {
+            BluetoothService.startScan()
+            scanStopTimer.restart()
+        }
         visible = true
     }
     function close() {
-        if (BluetoothService.scanning) BluetoothService.stopScan()
         visible = false
+    }
+
+    // Stop scan 20s after open — long enough to find devices, short enough to not drain battery
+    Timer {
+        id: scanStopTimer
+        interval: 20000
+        onTriggered: try { BluetoothService.stopScan() } catch(e) {}
+    }
+
+    // bluetoothctl handles its own agent — far more reliable than device.pair() alone
+    property string pairingAddress: ""
+    Process {
+        id: pairProc
+        onExited: function(code) { root.pairingAddress = "" }
+    }
+    function pairDevice(dev) {
+        if (!dev || !dev.address) return
+        root.pairingAddress = dev.address
+        pairProc.command = ["bluetoothctl", "pair", dev.address]
+        pairProc.running = true
+    }
+
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
+    property int focusIndex: 0
+    property bool focusPaired: true  // true = navigating pairedList, false = availList
+
+    function currentList() {
+        return focusPaired ? BluetoothService.pairedDevices : BluetoothService.availableDevices
+    }
+    function clampFocus() {
+        focusIndex = Math.max(0, Math.min(focusIndex, currentList().length - 1))
+    }
+    function activateFocused() {
+        const list = currentList()
+        if (focusIndex < 0 || focusIndex >= list.length) return
+        const dev = list[focusIndex]
+        if (!dev) return
+        if (focusPaired) {
+            if (dev.connected) dev.disconnect()
+            else dev.connect()
+        } else {
+            root.pairDevice(dev)
+        }
     }
 
     function deviceIcon(d) {
@@ -81,6 +128,14 @@ PanelWindow {
             onClicked: {}
         }
 
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 4000; onTriggered: if (!BluetoothService.scanning) root.close() }
+
         Item {
             anchors.fill: parent
             focus: root.visible
@@ -91,6 +146,32 @@ PanelWindow {
                 } else if (event.key === Qt.Key_R && (event.modifiers & Qt.ControlModifier)) {
                     if (BluetoothService.scanning) BluetoothService.stopScan()
                     else BluetoothService.startScan()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_J || event.key === Qt.Key_Down) {
+                    const len = root.currentList().length
+                    if (root.focusIndex + 1 < len) {
+                        root.focusIndex++
+                    } else if (root.focusPaired && BluetoothService.availableDevices.length > 0) {
+                        root.focusPaired = false; root.focusIndex = 0
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_K || event.key === Qt.Key_Up) {
+                    if (root.focusIndex > 0) {
+                        root.focusIndex--
+                    } else if (!root.focusPaired && BluetoothService.pairedDevices.length > 0) {
+                        root.focusPaired = true
+                        root.focusIndex = BluetoothService.pairedDevices.length - 1
+                    }
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Tab) {
+                    root.focusPaired = !root.focusPaired
+                    root.focusIndex = 0
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter || event.key === Qt.Key_Space) {
+                    root.activateFocused()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_B) {
+                    BluetoothService.setPowered(!BluetoothService.powered)
                     event.accepted = true
                 }
             }
@@ -224,13 +305,14 @@ PanelWindow {
                     width: pairedList.width
                     height: 40
                     required property var modelData
+                    required property int index
 
                     Rectangle {
                         anchors.fill: parent
                         radius: 6
                         color: modelData.connected
                                ? Qt.rgba(141/255, 161/255, 152/255, 0.15)
-                               : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+                               : ((root.focusPaired && index === root.focusIndex) ? Qt.rgba(1, 1, 1, 0.10) : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent"))
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         RowLayout {
@@ -355,11 +437,12 @@ PanelWindow {
                     width: availList.width
                     height: 36
                     required property var modelData
+                    required property int index
 
                     Rectangle {
                         anchors.fill: parent
                         radius: 6
-                        color: rowMouse2.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent"
+                        color: (!root.focusPaired && index === root.focusIndex) ? Qt.rgba(1, 1, 1, 0.10) : (rowMouse2.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         RowLayout {
@@ -383,11 +466,10 @@ PanelWindow {
                                 Layout.fillWidth: true
                             }
                             Text {
-                                text: modelData.pairing ? "Pairing…" : ""
-                                color: Theme.fgDim
+                                text: (modelData.pairing || root.pairingAddress === modelData.address) ? "Pairing…" : "Pair"
+                                color: (modelData.pairing || root.pairingAddress === modelData.address) ? Theme.yellow : Theme.fgDim
                                 font.family: Theme.fontFamily
                                 font.pixelSize: 9
-                                visible: text.length > 0
                             }
                         }
 
@@ -396,7 +478,7 @@ PanelWindow {
                             anchors.fill: parent
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: modelData.pair()
+                            onClicked: root.pairDevice(modelData)
                         }
                     }
                 }
@@ -405,7 +487,7 @@ PanelWindow {
             Text {
                 Layout.fillWidth: true
                 visible: BluetoothService.powered && BluetoothService.availableDevices.length === 0
-                text: BluetoothService.scanning ? "Scanning…" : "Click refresh to scan"
+                text: BluetoothService.scanning ? "Scanning for devices…" : "No devices found · Ctrl+R to scan"
                 color: Theme.fgDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 10
@@ -416,11 +498,12 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
-                text: "Ctrl+R rescan · Right-click paired to forget · Esc to close"
+                text: "j/k navigate · Enter connect · B power · Ctrl+R scan · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9
                 horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
                 visible: BluetoothService.powered
             }
         }

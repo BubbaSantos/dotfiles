@@ -44,6 +44,26 @@ PanelWindow {
         passwordValue = ""
     }
 
+    onVisibleChanged: if (visible) PopupManager.open(root)
+
+    property int focusIndex: 0
+
+    function clampFocus() {
+        focusIndex = Math.max(0, Math.min(focusIndex, WifiService.networks.length - 1))
+    }
+    function activateFocused() {
+        if (focusIndex < 0 || focusIndex >= WifiService.networks.length) return
+        const net = WifiService.networks[focusIndex]
+        if (!net || net.current) return
+        if (net.security === "open" || isKnown(net.ssid)) {
+            WifiService.connectToNetwork(net.ssid, "")
+            root.close()
+        } else {
+            passwordSsid = net.ssid
+            passwordValue = ""
+        }
+    }
+
     function isKnown(ssid) {
         for (const k of WifiService.knownNetworks) {
             if (k.ssid === ssid) return true
@@ -93,15 +113,38 @@ PanelWindow {
             onClicked: {}
         }
 
+        HoverHandler {
+            onHoveredChanged: {
+                if (!hovered) autoCloseTimer.restart()
+                else autoCloseTimer.stop()
+            }
+        }
+        Timer { id: autoCloseTimer; interval: 4000; onTriggered: root.close() }
+
         Item {
             anchors.fill: parent
-            focus: root.visible
+            focus: root.visible && root.passwordSsid === ""
             Keys.onPressed: function(event) {
                 if (event.key === Qt.Key_Escape) {
+                    if (root.passwordSsid) { root.passwordSsid = ""; root.passwordValue = ""; event.accepted = true; return }
                     root.close()
                     event.accepted = true
                 } else if (event.key === Qt.Key_R && (event.modifiers & Qt.ControlModifier)) {
                     WifiService.scan()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_J || event.key === Qt.Key_Down) {
+                    root.focusIndex = Math.min(root.focusIndex + 1, WifiService.networks.length - 1)
+                    netList.positionViewAtIndex(root.focusIndex, ListView.Contain)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_K || event.key === Qt.Key_Up) {
+                    root.focusIndex = Math.max(root.focusIndex - 1, 0)
+                    netList.positionViewAtIndex(root.focusIndex, ListView.Contain)
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    root.activateFocused()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_W) {
+                    WifiService.setPowered(!WifiService.powered)
                     event.accepted = true
                 }
             }
@@ -324,13 +367,14 @@ PanelWindow {
                     Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
                     required property var modelData
+                    required property int index
 
                     Rectangle {
                         anchors.fill: parent
                         radius: 6
                         color: modelData.current
                                ? Qt.rgba(141/255, 161/255, 152/255, 0.15)
-                               : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent")
+                               : (index === root.focusIndex ? Qt.rgba(1, 1, 1, 0.10) : (rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : "transparent"))
                         Behavior on color { ColorAnimation { duration: 150 } }
 
                         // Row content
@@ -491,7 +535,7 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
-                text: "Ctrl+R rescan · Right-click saved network to forget · Esc to close"
+                text: "j/k navigate · Enter connect · W toggle Wi-Fi · Ctrl+R rescan · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9

@@ -40,4 +40,6 @@ Singleton {
     readonly property int animFast:     150
     readonly property int animNormal:   250
     readonly property int animSlow:     350
+
+    property bool nowPlayingScroll: true
 }
