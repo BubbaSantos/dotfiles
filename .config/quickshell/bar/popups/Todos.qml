@@ -37,6 +37,21 @@ PanelWindow {
 
     property bool filterDropdownOpen: false
     property bool newCatDropdownOpen: false
+    property int  filterDropdownIndex: 0
+    property int  editPriority: 0
+    property string editCategory: ""
+    property string editDueDate: ""
+
+    onFilterDropdownOpenChanged: {
+        if (filterDropdownOpen) {
+            filterDropdownIndex = filterCategories.indexOf(activeCategory)
+            if (filterDropdownIndex < 0) filterDropdownIndex = 0
+        }
+    }
+
+    onActiveCategoryChanged: {
+        if (addingNew) newCategory = activeCategory === "All" ? "" : activeCategory
+    }
 
     // Keyboard focus: zone = "active" | "done" | "header"
     property string focusZone: "active"
@@ -54,6 +69,9 @@ PanelWindow {
         filterDropdownOpen = false
         newCatDropdownOpen = false
         showSettings = false
+        editPriority = 0
+        editCategory = ""
+        editDueDate = ""
         focusZone = activeTodos.length > 0 ? "active" : "header"
         focusIndex = 0
         visible = true
@@ -139,12 +157,24 @@ PanelWindow {
         if (becameDone) soundProc.running = true
     }
 
-    function updateText(id, newTextVal) {
+    function saveTodo(id, newTextVal) {
         if (!newTextVal.trim()) return
         TimepiecesStore.todos = TimepiecesStore.todos.map(t =>
-            t.id === id ? Object.assign({}, t, { text: newTextVal.trim() }) : t)
+            t.id === id ? Object.assign({}, t, {
+                text:     newTextVal.trim(),
+                priority: editPriority,
+                category: editCategory,
+                dueDate:  editDueDate
+            }) : t)
         TimepiecesStore.save()
         editingId = ""
+    }
+
+    function startEditing(todo) {
+        editingId  = todo.id
+        editPriority = todo.priority || 0
+        editCategory = todo.category || ""
+        editDueDate  = todo.dueDate  || ""
     }
 
     function deleteTodo(id) {
@@ -242,8 +272,9 @@ PanelWindow {
             else if (focusIndex === 2) close()
             return
         }
-        const id = focusedTodoId()
-        if (id) editingId = id
+        const items = zoneItems(focusZone)
+        const todo = items[focusIndex]
+        if (todo) root.startEditing(todo)
     }
 
     function spaceFocused() {

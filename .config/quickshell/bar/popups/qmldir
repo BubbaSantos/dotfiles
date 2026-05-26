@@ -11,6 +11,7 @@ Pomodoro 1.0 Pomodoro.qml
 Stopwatch 1.0 Stopwatch.qml
 TimerPopup 1.0 TimerPopup.qml
 ControlCenter 1.0 ControlCenter.qml
+TimepiecesMenu 1.0 TimepiecesMenu.qml
 Notifications 1.0 Notifications.qml
 SystemMonitor 1.0 SystemMonitor.qml
 NotifHub 1.0 NotifHub.qml

@@ -3,6 +3,7 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Hyprland
 import qs
+import qs.popups
 
 RowLayout {
     spacing: 2
@@ -52,8 +53,16 @@ RowLayout {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Hyprland.dispatch("workspace " + modelData)
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: function(ev) {
+                    if (ev.button === Qt.LeftButton)
+                        Hyprland.dispatch("workspace " + modelData)
+                    else if (ev.button === Qt.RightButton)
+                        controlCenter.toggle()
+                }
             }
         }
     }
+
+    ControlCenter { id: controlCenter }
 }

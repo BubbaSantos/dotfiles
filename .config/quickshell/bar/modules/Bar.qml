@@ -56,7 +56,7 @@ PanelWindow {
 
             RowLayout {
                 id: centerRow
-                anchors.fill: parent
+                anchors.centerIn: parent
                 spacing: 0
                 Workspaces {}
             }
