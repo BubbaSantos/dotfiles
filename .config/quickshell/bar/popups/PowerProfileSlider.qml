@@ -105,7 +105,7 @@ PanelWindow {
         }
         y: 0
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 10
         border.width: 1
         border.color: "#f38c6f"

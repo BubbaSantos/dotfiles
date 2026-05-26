@@ -49,7 +49,7 @@ PanelWindow {
         }
         y: Theme.barHeight + 8
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 14
         border.width: 1
         border.color: "#f38c6f"

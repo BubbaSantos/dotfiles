@@ -3,26 +3,37 @@ import QtQuick.Layouts
 import Quickshell
 import Quickshell.Wayland
 import qs
+import qs.services
 
 PanelWindow {
     id: bar
     color: "transparent"
 
-    anchors {
-        top: true
-        left: true
-        right: true
-    }
+    anchors.top:    SettingsStore.barPosition === "top"
+    anchors.bottom: SettingsStore.barPosition === "bottom"
+    anchors.left:  true
+    anchors.right: true
 
     implicitHeight: Theme.barHeight + Theme.barMargin
 
-    // The three module groups, each with rounded background
+    // ── Unified full-width background (only in unified mode) ───────────
+    Rectangle {
+        visible: SettingsStore.barStyle === "unified"
+        anchors.fill: parent
+        anchors.topMargin:    SettingsStore.barPosition === "top"    ? Theme.barMargin : 1
+        anchors.bottomMargin: SettingsStore.barPosition === "bottom" ? Theme.barMargin : 1
+        anchors.leftMargin:  2
+        anchors.rightMargin: 2
+        radius: Theme.groupRadius
+        color: Theme.barBg
+    }
+
     Item {
         anchors.fill: parent
-        anchors.topMargin: 3
-        anchors.bottomMargin: 1
-        anchors.leftMargin: Theme.barMargin
-        anchors.rightMargin: Theme.barMargin
+        anchors.topMargin:    SettingsStore.barPosition === "top"    ? 3 : 1
+        anchors.bottomMargin: SettingsStore.barPosition === "bottom" ? 3 : 1
+        anchors.leftMargin:  SettingsStore.barStyle === "floating" ? Theme.barMargin : 4
+        anchors.rightMargin: SettingsStore.barStyle === "floating" ? Theme.barMargin : 4
 
         // LEFT GROUP
         Rectangle {
@@ -30,17 +41,17 @@ PanelWindow {
             anchors.left: parent.left
             anchors.verticalCenter: parent.verticalCenter
             height: Theme.barHeight - 4
-            radius: Theme.groupRadius
-            color: Theme.barBg
-            width: leftRow.implicitWidth + 16
+            radius: SettingsStore.barStyle === "floating" ? Theme.groupRadius : 0
+            color: SettingsStore.barStyle === "floating" ? Theme.barBg : "transparent"
+            width: leftRow.implicitWidth + (SettingsStore.barStyle === "floating" ? 16 : 8)
+            visible: SettingsStore.showNowPlaying
 
             RowLayout {
                 id: leftRow
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
+                anchors.leftMargin: SettingsStore.barStyle === "floating" ? 8 : 4
+                anchors.rightMargin: SettingsStore.barStyle === "floating" ? 8 : 4
                 spacing: 0
-
                 NowPlaying {}
             }
         }
@@ -50,8 +61,8 @@ PanelWindow {
             anchors.horizontalCenter: parent.horizontalCenter
             anchors.verticalCenter: parent.verticalCenter
             height: Theme.barHeight - 4
-            radius: Theme.groupRadius
-            color: Theme.barBg
+            radius: SettingsStore.barStyle === "floating" ? Theme.groupRadius : 0
+            color: SettingsStore.barStyle === "floating" ? Theme.barBg : "transparent"
             width: centerRow.implicitWidth + 8
 
             RowLayout {
@@ -67,25 +78,25 @@ PanelWindow {
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             height: Theme.barHeight - 4
-            radius: Theme.groupRadius
-            color: Theme.barBg
-            width: rightRow.implicitWidth + 16
+            radius: SettingsStore.barStyle === "floating" ? Theme.groupRadius : 0
+            color: SettingsStore.barStyle === "floating" ? Theme.barBg : "transparent"
+            width: rightRow.implicitWidth + (SettingsStore.barStyle === "floating" ? 16 : 8)
 
             RowLayout {
                 id: rightRow
                 anchors.fill: parent
-                anchors.leftMargin: 8
-                anchors.rightMargin: 8
+                anchors.leftMargin: SettingsStore.barStyle === "floating" ? 8 : 4
+                anchors.rightMargin: SettingsStore.barStyle === "floating" ? 8 : 4
                 spacing: 4
 
-                Tray {}
-                Network {}
-                Bluetooth {}
-                RemindersIndicator {}
-                TodosIndicator {}
-                NotifIndicator {}
-                Clock {}
-                Battery {}
+                Tray              { visible: SettingsStore.showTray          }
+                Network           { visible: SettingsStore.showNetwork       }
+                Bluetooth         { visible: SettingsStore.showBluetooth     }
+                RemindersIndicator{ visible: SettingsStore.showReminders     }
+                TodosIndicator    { visible: SettingsStore.showTodos         }
+                NotifIndicator    { visible: SettingsStore.showNotifications }
+                Clock             { visible: SettingsStore.showClock         }
+                Battery           { visible: SettingsStore.showBattery       }
             }
         }
     }

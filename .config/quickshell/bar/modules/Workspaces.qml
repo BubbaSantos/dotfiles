@@ -65,4 +65,9 @@ RowLayout {
     }
 
     ControlCenter { id: controlCenter }
+
+    GlobalShortcut {
+        name: "toggleControlCenter"
+        onPressed: controlCenter.toggle()
+    }
 }

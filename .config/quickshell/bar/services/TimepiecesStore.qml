@@ -16,7 +16,9 @@ QtObject {
     property bool use24hr: false
     property var pinnedTray: []
     property bool todosBarShow: true
-    property string todosBarFilter: "all"
+    property string todosBarFilter: "highPriority"
+    property string todosSort: "manual"
+    property bool todosPriorityFirst: false
     property bool remindersBarShow: true
 
     property bool loaded: false
@@ -37,6 +39,8 @@ QtObject {
             pinnedTray: root.pinnedTray,
             todosBarShow: root.todosBarShow,
             todosBarFilter: root.todosBarFilter,
+            todosSort: root.todosSort,
+            todosPriorityFirst: root.todosPriorityFirst,
             remindersBarShow: root.remindersBarShow
         }, null, 2)
 
@@ -176,6 +180,8 @@ QtObject {
                     if (data.pinnedTray) root.pinnedTray = data.pinnedTray
                     if (typeof data.todosBarShow === "boolean") root.todosBarShow = data.todosBarShow
                     if (data.todosBarFilter) root.todosBarFilter = data.todosBarFilter
+                    if (data.todosSort) root.todosSort = data.todosSort
+                    if (typeof data.todosPriorityFirst === "boolean") root.todosPriorityFirst = data.todosPriorityFirst
                     if (typeof data.remindersBarShow === "boolean") root.remindersBarShow = data.remindersBarShow
                 } catch (e) {
                     console.warn("TimepiecesStore: parse failed", e)

@@ -26,6 +26,9 @@ PanelWindow {
     function toggle() { visible = !visible }
     function close()  { visible = false }
 
+    Settings         { id: settingsPopup  }
+    WallpaperPicker  { id: wallpaperPicker }
+
     onVisibleChanged: {
         if (visible) {
             PopupManager.open(root)
@@ -92,7 +95,7 @@ PanelWindow {
         x: root.width - width - 8
         y: Theme.barHeight + 8
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 14
         border.width: 1
         border.color: "#f38c6f"
@@ -419,13 +422,15 @@ PanelWindow {
                         { label: "Calendar",  icon: "󰸗", color: Theme.aqua   },
                         { label: "Timers",    icon: "󰔛", color: Theme.purple },
                         { label: "Hub",       icon: "󰂚", color: Theme.yellow },
+                        { label: "Wallpaper", icon: "󰸉", color: Theme.green  },
+                        { label: "Settings",  icon: "󰒓", color: Theme.blue   },
                         { label: "Power",     icon: "⏻",  color: Theme.red    },
                     ]
                     delegate: Rectangle {
                         required property var modelData
                         required property int index
                         Layout.fillWidth: true; height: 44; radius: 8
-                        color: (index === 3 && root.showPowerMenu)
+                        color: (index === 5 && root.showPowerMenu)
                                ? Qt.rgba(1,1,1,0.14)
                                : (lM.containsMouse ? Qt.rgba(1,1,1,0.12) : Qt.rgba(1,1,1,0.06))
                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -451,7 +456,9 @@ PanelWindow {
                                 if (index === 0)      root.dispatchShortcut("toggleCalendar")
                                 else if (index === 1) timersMenu.toggle()
                                 else if (index === 2) root.dispatchShortcut("toggleNotifHub")
-                                else if (index === 3) root.showPowerMenu = !root.showPowerMenu
+                                else if (index === 3) wallpaperPicker.toggle()
+                                else if (index === 4) settingsPopup.toggle()
+                                else if (index === 5) root.showPowerMenu = !root.showPowerMenu
                             }
                         }
                     }

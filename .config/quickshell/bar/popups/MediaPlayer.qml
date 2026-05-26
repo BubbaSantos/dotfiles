@@ -214,7 +214,7 @@ PanelWindow {
         }
         y: 0
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 10
         border.width: 1
         border.color: "#f38c6f"
@@ -249,11 +249,11 @@ PanelWindow {
                 if (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
                 else if (event.key === Qt.Key_Space) {
                     if (root.hasContent && root.p && root.p.canTogglePlaying) root.p.isPlaying = !root.p.isPlaying
-                    else if (!root.hasContent) ActivePlayer.launchYTMusic()
+                    else if (!root.hasContent) { ActivePlayer.launchYTMusic(); root.close() }
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_Return) {
-                    if (!root.hasContent) ActivePlayer.launchYTMusic()
+                    if (!root.hasContent) { ActivePlayer.launchYTMusic(); root.close() }
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_J || event.key === Qt.Key_Down) {
@@ -290,7 +290,8 @@ PanelWindow {
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_S) {
-                    Theme.nowPlayingScroll = !Theme.nowPlayingScroll
+                    SettingsStore.nowPlayingScroll = !SettingsStore.nowPlayingScroll
+                    SettingsStore.save()
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_X) {
@@ -369,7 +370,7 @@ PanelWindow {
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: Theme.nowPlayingScroll = !Theme.nowPlayingScroll
+                onClicked: { SettingsStore.nowPlayingScroll = !SettingsStore.nowPlayingScroll; SettingsStore.save() }
             }
         }
 
@@ -540,7 +541,7 @@ PanelWindow {
                         anchors.fill: parent
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
-                        onClicked: ActivePlayer.launchYTMusic()
+                        onClicked: { ActivePlayer.launchYTMusic(); root.close() }
                     }
                 }
             }

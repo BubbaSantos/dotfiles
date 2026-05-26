@@ -73,7 +73,7 @@ PanelWindow {
         y: 0
         Component.onCompleted: console.log("MENU Y DEBUG: barHeight=", Theme.barHeight, "card.y=", y)
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 10
         border.width: 1
         border.color: Qt.rgba(1, 1, 1, 0.06)

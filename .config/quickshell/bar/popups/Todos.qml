@@ -98,11 +98,21 @@ PanelWindow {
     readonly property var filterCategories: ["All", ...allCategoryNames]
 
     function filtered(includeDone) {
-        return TimepiecesStore.todos.filter(t => {
+        const result = TimepiecesStore.todos.filter(t => {
             if (!includeDone && t.done) return false
             if (includeDone && !t.done) return false
             if (activeCategory === "All") return true
             return (t.category || "") === activeCategory
+        })
+        return result.slice().sort((a, b) => {
+            if (TimepiecesStore.todosPriorityFirst) {
+                const diff = (b.priority || 0) - (a.priority || 0)
+                if (diff !== 0) return diff
+            }
+            const s = TimepiecesStore.todosSort
+            if (s === "newestFirst") return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+            if (s === "oldestFirst") return new Date(a.createdAt || 0) - new Date(b.createdAt || 0)
+            return (a.order || 0) - (b.order || 0)
         })
     }
 
@@ -171,10 +181,10 @@ PanelWindow {
     }
 
     function startEditing(todo) {
-        editingId  = todo.id
         editPriority = todo.priority || 0
         editCategory = todo.category || ""
         editDueDate  = todo.dueDate  || ""
+        editingId    = todo.id
     }
 
     function deleteTodo(id) {
@@ -251,6 +261,7 @@ PanelWindow {
     function reorderKeyboard(delta) {
         // delta = -1 (up) or +1 (down)
         if (focusZone !== "active") return
+        if (TimepiecesStore.todosSort !== "manual") return
         const id = focusedTodoId()
         if (!id) return
         const idx = activeTodos.findIndex(t => t.id === id)
@@ -346,7 +357,7 @@ PanelWindow {
         }
         y: 0
 
-        color: Theme.barBg
+        color: Theme.popupBg
         radius: 10
         border.width: 1
         border.color: "#f38c6f"
@@ -377,12 +388,27 @@ PanelWindow {
             anchors.fill: parent
             focus: root.visible && !root.addingNew && root.editingId === ""
             Keys.onPressed: function(event) {
+                if (root.filterDropdownOpen) {
+                    if (event.key === Qt.Key_Escape) {
+                        root.filterDropdownOpen = false
+                    } else if (event.key === Qt.Key_J || event.key === Qt.Key_Down) {
+                        root.filterDropdownIndex = Math.min(root.filterDropdownIndex + 1, root.filterCategories.length - 1)
+                    } else if (event.key === Qt.Key_K || event.key === Qt.Key_Up) {
+                        root.filterDropdownIndex = Math.max(root.filterDropdownIndex - 1, 0)
+                    } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                        root.activeCategory = root.filterCategories[root.filterDropdownIndex]
+                        root.filterDropdownOpen = false
+                    }
+                    event.accepted = true
+                    return
+                }
                 if (event.key === Qt.Key_Escape) {
                     root.close()
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_N && (event.modifiers & Qt.ControlModifier)) {
                     root.addingNew = true
+                    root.newCategory = root.activeCategory === "All" ? "" : root.activeCategory
                     event.accepted = true
                 }
                 else if (event.key === Qt.Key_Tab && !(event.modifiers & Qt.ShiftModifier)) {
@@ -414,6 +440,21 @@ PanelWindow {
                             const items = root.zoneItems(root.focusZone)
                             root.focusIndex = Math.max(0, items.length - 1)
                         }
+                    }
+                    event.accepted = true
+                }
+                else if (event.key === Qt.Key_J && !(event.modifiers & Qt.ShiftModifier)) {
+                    const items = root.zoneItems(root.focusZone)
+                    if (root.focusIndex < items.length - 1) root.focusIndex++
+                    else root.nextZone()
+                    event.accepted = true
+                }
+                else if (event.key === Qt.Key_K && !(event.modifiers & Qt.ShiftModifier)) {
+                    if (root.focusIndex > 0) root.focusIndex--
+                    else {
+                        root.prevZone()
+                        const items = root.zoneItems(root.focusZone)
+                        root.focusIndex = Math.max(0, items.length - 1)
                     }
                     event.accepted = true
                 }
@@ -618,6 +659,10 @@ PanelWindow {
                     NumberAnimation { duration: 200; easing.type: Easing.OutCubic }
                 }
 
+                onVisibleChanged: {
+                    if (visible) addCatInput.text = root.newCategory
+                }
+
                 ColumnLayout {
                     id: addCol
                     anchors.fill: parent
@@ -641,9 +686,10 @@ PanelWindow {
                             color: Theme.fg
                             font.family: Theme.fontFamily
                             font.pixelSize: 12
-                            focus: root.addingNew && !root.newCategoryAddMode
+                            focus: root.addingNew
                             text: root.newText
                             onTextChanged: root.newText = text
+                            KeyNavigation.tab: priorityFocus
                             Keys.onReturnPressed: root.addTodo()
                             Keys.onEscapePressed: root.addingNew = false
 
@@ -662,43 +708,84 @@ PanelWindow {
                         Layout.fillWidth: true
                         spacing: 6
 
-                        Repeater {
-                            model: [
-                                { p: 0, label: "—" },
-                                { p: 1, label: "L" },
-                                { p: 2, label: "M" },
-                                { p: 3, label: "H" }
-                            ]
-                            delegate: Rectangle {
-                                required property var modelData
-                                Layout.preferredHeight: 24
-                                Layout.preferredWidth: 28
-                                radius: 4
-                                color: root.newPriority === modelData.p
-                                       ? root.priorityColor(modelData.p) === "transparent"
-                                         ? Qt.rgba(1, 1, 1, 0.18)
-                                         : root.priorityColor(modelData.p)
-                                       : Qt.rgba(0, 0, 0, 0.3)
-                                border.width: 1
-                                border.color: root.newPriority === modelData.p
-                                              ? Qt.rgba(1, 1, 1, 0.3)
-                                              : Qt.rgba(1, 1, 1, 0.05)
-                                Behavior on color { ColorAnimation { duration: 150 } }
+                        FocusScope {
+                            id: priorityFocus
+                            Layout.preferredWidth: 130
+                            Layout.preferredHeight: 24
+                            activeFocusOnTab: true
+                            KeyNavigation.backtab: addInput
+                            KeyNavigation.tab: addCatInput
 
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: modelData.label
-                                    color: root.newPriority === modelData.p && modelData.p > 0
-                                           ? Theme.bg : Theme.fg
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: 10
-                                    font.bold: true
-                                }
+                            Rectangle {
+                                anchors.fill: parent
+                                anchors.margins: -2
+                                radius: 5
+                                color: "transparent"
+                                border.width: priorityFocus.activeFocus ? 1 : 0
+                                border.color: Theme.yellow
+                            }
 
-                                MouseArea {
-                                    anchors.fill: parent
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: root.newPriority = modelData.p
+                            Keys.onPressed: function(event) {
+                                if (event.key === Qt.Key_Right) {
+                                    root.newPriority = Math.min(3, root.newPriority + 1)
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_Left) {
+                                    root.newPriority = Math.max(0, root.newPriority - 1)
+                                    event.accepted = true
+                                } else if (event.key === Qt.Key_0) { root.newPriority = 0; event.accepted = true }
+                                else if (event.key === Qt.Key_1) { root.newPriority = 1; event.accepted = true }
+                                else if (event.key === Qt.Key_2) { root.newPriority = 2; event.accepted = true }
+                                else if (event.key === Qt.Key_3) { root.newPriority = 3; event.accepted = true }
+                                else if (event.key === Qt.Key_Return) { root.addTodo(); event.accepted = true }
+                                else if (event.key === Qt.Key_Escape) { root.addingNew = false; event.accepted = true }
+                            }
+
+                            RowLayout {
+                                anchors.fill: parent
+                                spacing: 6
+
+                                Repeater {
+                                    model: [
+                                        { p: 0, label: "—" },
+                                        { p: 1, label: "L" },
+                                        { p: 2, label: "M" },
+                                        { p: 3, label: "H" }
+                                    ]
+                                    delegate: Rectangle {
+                                        required property var modelData
+                                        Layout.preferredHeight: 24
+                                        Layout.preferredWidth: 28
+                                        radius: 4
+                                        color: root.newPriority === modelData.p
+                                               ? root.priorityColor(modelData.p) === "transparent"
+                                                 ? Qt.rgba(1, 1, 1, 0.18)
+                                                 : root.priorityColor(modelData.p)
+                                               : Qt.rgba(0, 0, 0, 0.3)
+                                        border.width: 1
+                                        border.color: root.newPriority === modelData.p
+                                                      ? Qt.rgba(1, 1, 1, 0.3)
+                                                      : Qt.rgba(1, 1, 1, 0.05)
+                                        Behavior on color { ColorAnimation { duration: 150 } }
+
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: modelData.label
+                                            color: root.newPriority === modelData.p && modelData.p > 0
+                                                   ? Theme.bg : Theme.fg
+                                            font.family: Theme.fontFamily
+                                            font.pixelSize: 10
+                                            font.bold: true
+                                        }
+
+                                        MouseArea {
+                                            anchors.fill: parent
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                root.newPriority = modelData.p
+                                                priorityFocus.forceActiveFocus()
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -711,83 +798,63 @@ PanelWindow {
                             Layout.preferredHeight: 24
 
                             Rectangle {
-                                visible: !root.newCategoryAddMode
-                                anchors.fill: parent
-                                radius: 4
-                                color: newCatMouse.containsMouse || root.newCatDropdownOpen
-                                       ? Qt.rgba(1, 1, 1, 0.12)
-                                       : Qt.rgba(0, 0, 0, 0.3)
-                                border.width: 1
-                                border.color: root.newCatDropdownOpen ? Theme.yellow : Qt.rgba(1, 1, 1, 0.08)
-                                Behavior on color { ColorAnimation { duration: 150 } }
-
-                                RowLayout {
-                                    anchors.fill: parent
-                                    anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    spacing: 4
-
-                                    Text {
-                                        text: root.newCategory || "Category"
-                                        color: root.newCategory ? Theme.fg : Theme.fgVeryDim
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: 11
-                                        elide: Text.ElideRight
-                                        Layout.fillWidth: true
-                                    }
-                                    Text {
-                                        text: "▾"
-                                        color: Theme.fgDim
-                                        font.family: Theme.fontFamily
-                                        font.pixelSize: 9
-                                    }
-                                }
-
-                                MouseArea {
-                                    id: newCatMouse
-                                    anchors.fill: parent
-                                    hoverEnabled: true
-                                    cursorShape: Qt.PointingHandCursor
-                                    onClicked: {
-                                        root.filterDropdownOpen = false
-                                        root.newCatDropdownOpen = !root.newCatDropdownOpen
-                                    }
-                                }
-                            }
-
-                            Rectangle {
-                                visible: root.newCategoryAddMode
                                 anchors.fill: parent
                                 radius: 4
                                 color: Qt.rgba(0, 0, 0, 0.3)
                                 border.width: 1
-                                border.color: newCatInput.activeFocus ? Theme.yellow : Qt.rgba(1, 1, 1, 0.08)
+                                border.color: addCatInput.activeFocus || root.newCatDropdownOpen
+                                              ? Theme.yellow : Qt.rgba(1, 1, 1, 0.08)
+                                Behavior on border.color { ColorAnimation { duration: 150 } }
 
-                                TextInput {
-                                    id: newCatInput
+                                RowLayout {
                                     anchors.fill: parent
                                     anchors.leftMargin: 8
-                                    anchors.rightMargin: 8
-                                    verticalAlignment: TextInput.AlignVCenter
-                                    color: Theme.fg
-                                    font.family: Theme.fontFamily
-                                    font.pixelSize: 11
-                                    focus: root.newCategoryAddMode
-                                    text: root.newCategory
-                                    onTextChanged: root.newCategory = text
-                                    Keys.onReturnPressed: root.newCategoryAddMode = false
-                                    Keys.onEscapePressed: {
-                                        root.newCategory = ""
-                                        root.newCategoryAddMode = false
+                                    anchors.rightMargin: 2
+                                    spacing: 0
+
+                                    TextInput {
+                                        id: addCatInput
+                                        Layout.fillWidth: true
+                                        Layout.fillHeight: true
+                                        verticalAlignment: TextInput.AlignVCenter
+                                        color: Theme.fg
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 11
+                                        selectByMouse: true
+                                        onTextChanged: root.newCategory = text
+                                        KeyNavigation.tab: dateInput
+                                        KeyNavigation.backtab: priorityFocus
+                                        Keys.onReturnPressed: root.addTodo()
+                                        Keys.onEscapePressed: root.addingNew = false
+
+                                        Text {
+                                            anchors.fill: parent
+                                            verticalAlignment: Text.AlignVCenter
+                                            text: "Category"
+                                            color: Theme.fgVeryDim
+                                            font: parent.font
+                                            visible: !parent.text && !parent.activeFocus
+                                        }
                                     }
 
                                     Text {
-                                        anchors.fill: parent
-                                        verticalAlignment: Text.AlignVCenter
-                                        text: "New category name"
-                                        color: Theme.fgVeryDim
-                                        font: parent.font
-                                        visible: !parent.text && !parent.activeFocus
+                                        text: "▾"
+                                        color: catDropBtnMouse.containsMouse ? Theme.fg : Theme.fgDim
+                                        font.family: Theme.fontFamily
+                                        font.pixelSize: 9
+                                        Layout.preferredWidth: 20
+                                        horizontalAlignment: Text.AlignHCenter
+
+                                        MouseArea {
+                                            id: catDropBtnMouse
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: {
+                                                root.filterDropdownOpen = false
+                                                root.newCatDropdownOpen = !root.newCatDropdownOpen
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -819,6 +886,9 @@ PanelWindow {
                                     }
                                 }
                                 inputMask: "99/99/9999;_"
+                                KeyNavigation.backtab: addCatInput
+                                Keys.onReturnPressed: root.addTodo()
+                                Keys.onEscapePressed: root.addingNew = false
 
                                 Text {
                                     anchors.fill: parent
@@ -1027,6 +1097,107 @@ PanelWindow {
                         font.pixelSize: 9
                         wrapMode: Text.WordWrap
                     }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 1
+                        color: Qt.rgba(1, 1, 1, 0.06)
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Text {
+                            text: "Sort"
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            Layout.preferredWidth: 70
+                        }
+
+                        Repeater {
+                            model: [
+                                { key: "manual", label: "Manual" },
+                                { key: "newestFirst", label: "Newest" },
+                                { key: "oldestFirst", label: "Oldest" }
+                            ]
+                            delegate: Rectangle {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                Layout.preferredHeight: 22
+                                radius: 4
+                                color: TimepiecesStore.todosSort === modelData.key
+                                       ? Theme.yellow
+                                       : (sortSegMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.1) : Qt.rgba(0, 0, 0, 0.3))
+                                border.width: 1
+                                border.color: TimepiecesStore.todosSort === modelData.key
+                                              ? Theme.yellow : Qt.rgba(1, 1, 1, 0.05)
+                                Behavior on color { ColorAnimation { duration: 150 } }
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: modelData.label
+                                    color: TimepiecesStore.todosSort === modelData.key
+                                           ? Theme.bg : Theme.fg
+                                    font.family: Theme.fontFamily
+                                    font.pixelSize: 10
+                                    font.bold: TimepiecesStore.todosSort === modelData.key
+                                }
+
+                                MouseArea {
+                                    id: sortSegMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    cursorShape: Qt.PointingHandCursor
+                                    onClicked: {
+                                        TimepiecesStore.todosSort = modelData.key
+                                        TimepiecesStore.save()
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    RowLayout {
+                        Layout.fillWidth: true
+                        spacing: 8
+
+                        Text {
+                            text: "Priority first"
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            Layout.fillWidth: true
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 36
+                            Layout.preferredHeight: 18
+                            radius: 9
+                            color: TimepiecesStore.todosPriorityFirst ? Theme.green : Qt.rgba(1, 1, 1, 0.1)
+                            Behavior on color { ColorAnimation { duration: 200 } }
+
+                            Rectangle {
+                                width: 14
+                                height: 14
+                                radius: 7
+                                color: Theme.fg
+                                anchors.verticalCenter: parent.verticalCenter
+                                x: TimepiecesStore.todosPriorityFirst ? parent.width - width - 2 : 2
+                                Behavior on x { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: {
+                                    TimepiecesStore.todosPriorityFirst = !TimepiecesStore.todosPriorityFirst
+                                    TimepiecesStore.save()
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1119,7 +1290,7 @@ PanelWindow {
 
             Text {
                 Layout.fillWidth: true
-                text: "↑↓ navigate · Space toggle · Enter edit · Del delete · Shift+↑↓ reorder · Tab zones · Ctrl+N new · D done · F filter · Esc close"
+                text: "↑↓/jk navigate · Space toggle · Enter edit · Del delete · Shift+↑↓ reorder · Tab zones · Ctrl+N new · Tab priority/cat/date · D done · F filter · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9
@@ -1159,10 +1330,11 @@ PanelWindow {
                     model: root.filterCategories
                     delegate: Rectangle {
                         required property string modelData
+                        required property int index
                         Layout.fillWidth: true
                         Layout.preferredHeight: 28
                         radius: 4
-                        color: filterItemMouse.containsMouse
+                        color: filterItemMouse.containsMouse || root.filterDropdownIndex === index
                                ? Qt.rgba(1, 1, 1, 0.12)
                                : (modelData === root.activeCategory ? Qt.rgba(1,1,1,0.06) : "transparent")
                         Behavior on color { ColorAnimation { duration: Theme.animFast } }
@@ -1256,7 +1428,7 @@ PanelWindow {
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
-                            root.newCategory = ""
+                            addCatInput.text = ""
                             root.newCatDropdownOpen = false
                         }
                     }
@@ -1302,50 +1474,9 @@ PanelWindow {
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                root.newCategory = modelData
+                                addCatInput.text = modelData
                                 root.newCatDropdownOpen = false
                             }
-                        }
-                    }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.topMargin: 2
-                    Layout.bottomMargin: 2
-                    Layout.leftMargin: 6
-                    Layout.rightMargin: 6
-                    Layout.preferredHeight: 1
-                    color: Qt.rgba(1, 1, 1, 0.08)
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    Layout.preferredHeight: 26
-                    radius: 4
-                    color: addNewCatMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : "transparent"
-                    Behavior on color { ColorAnimation { duration: Theme.animFast } }
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 10
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: "+ Add new category…"
-                        color: Theme.yellow
-                        font.family: Theme.fontFamily
-                        font.pixelSize: 11
-                        font.bold: true
-                    }
-
-                    MouseArea {
-                        id: addNewCatMouse
-                        anchors.fill: parent
-                        hoverEnabled: true
-                        cursorShape: Qt.PointingHandCursor
-                        onClicked: {
-                            root.newCategory = ""
-                            root.newCategoryAddMode = true
-                            root.newCatDropdownOpen = false
                         }
                     }
                 }
@@ -1358,7 +1489,9 @@ PanelWindow {
         property var todoData
         property bool isDone
 
-        height: 32
+        readonly property bool isEditing: root.editingId === todoData.id
+        height: isEditing ? 32 + editExpand.height + 4 : 32
+        Behavior on height { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
 
         readonly property bool isFocused: {
             if (root.focusZone === (isDone ? "done" : "active")) {
@@ -1376,7 +1509,10 @@ PanelWindow {
         Drag.dragType: Drag.Automatic
 
         DropArea {
-            anchors.fill: parent
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: 32
             onDropped: function(drop) {
                 if (drop.source && drop.source.todoData) {
                     root.moveTodo(drop.source.todoData.id, todoRow.todoData.id)
@@ -1399,9 +1535,12 @@ PanelWindow {
         }
 
         Rectangle {
-            anchors.fill: parent
+            id: mainRow
+            anchors.top: parent.top
+            anchors.left: parent.left
+            anchors.right: parent.right
             anchors.topMargin: 1
-            anchors.bottomMargin: 1
+            height: 30
             radius: 4
             color: rowMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.04) : "transparent"
             border.width: todoRow.isFocused ? 1 : 0
@@ -1431,6 +1570,7 @@ PanelWindow {
                     color: dragMouse.containsMouse ? Theme.fg : Theme.fgVeryDim
                     font.family: Theme.fontFamily
                     font.pixelSize: 12
+                    visible: TimepiecesStore.todosSort === "manual" && !todoRow.isEditing
 
                     MouseArea {
                         id: dragMouse
@@ -1481,7 +1621,7 @@ PanelWindow {
                     Text {
                         anchors.fill: parent
                         verticalAlignment: Text.AlignVCenter
-                        visible: root.editingId !== todoData.id
+                        visible: !todoRow.isEditing
                         text: todoData.text
                         color: todoData.done ? Theme.fgDim : Theme.fg
                         font.family: Theme.fontFamily
@@ -1494,8 +1634,8 @@ PanelWindow {
                         id: editInput
                         anchors.fill: parent
                         verticalAlignment: TextInput.AlignVCenter
-                        visible: root.editingId === todoData.id
-                        focus: root.editingId === todoData.id
+                        visible: todoRow.isEditing
+                        focus: todoRow.isEditing
                         text: todoData.text
                         color: Theme.fg
                         font.family: Theme.fontFamily
@@ -1509,34 +1649,28 @@ PanelWindow {
                             }
                         }
 
-                        Keys.onReturnPressed: root.updateText(todoData.id, text)
+                        Keys.onReturnPressed: root.saveTodo(todoData.id, text)
                         Keys.onEscapePressed: root.editingId = ""
-                        onFocusChanged: {
-                            if (!activeFocus && root.editingId === todoData.id) {
-                                if (text.trim()) root.updateText(todoData.id, text)
-                                else root.editingId = ""
-                            }
-                        }
                     }
 
                     MouseArea {
                         anchors.fill: parent
-                        visible: root.editingId !== todoData.id && !todoData.done
+                        visible: !todoRow.isEditing && !todoData.done
                         cursorShape: Qt.IBeamCursor
-                        onClicked: root.editingId = todoData.id
+                        onClicked: root.startEditing(todoData)
                     }
                 }
 
                 Text {
-                    visible: todoData.category && todoData.category.length > 0
-                    text: todoData.category
+                    visible: (todoData.category && todoData.category.length > 0) && !todoRow.isEditing
+                    text: todoData.category || ""
                     color: Theme.fgDim
                     font.family: Theme.fontFamily
                     font.pixelSize: 9
                 }
 
                 Text {
-                    visible: todoData.dueDate && todoData.dueDate.length > 0
+                    visible: (todoData.dueDate && todoData.dueDate.length > 0) && !todoRow.isEditing
                     text: root.dueLabel(todoData.dueDate)
                     color: root.dueColor(todoData.dueDate)
                     font.family: Theme.fontFamily
@@ -1547,6 +1681,7 @@ PanelWindow {
                     Layout.preferredWidth: 18
                     Layout.preferredHeight: 18
                     radius: 9
+                    visible: !todoRow.isEditing
                     color: delMouse.containsMouse ? Theme.red : "transparent"
                     opacity: rowMouse.containsMouse || delMouse.containsMouse ? 1 : 0
                     Behavior on opacity { NumberAnimation { duration: 150 } }
@@ -1576,6 +1711,208 @@ PanelWindow {
                 hoverEnabled: true
                 acceptedButtons: Qt.NoButton
                 propagateComposedEvents: true
+            }
+        }
+
+        Rectangle {
+            id: editExpand
+            visible: todoRow.isEditing
+            anchors.top: mainRow.bottom
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.topMargin: 4
+            height: editCol.implicitHeight + 16
+            radius: 6
+            color: Qt.rgba(0, 0, 0, 0.25)
+
+            onVisibleChanged: {
+                if (visible) {
+                    editCatInput.text = root.editCategory
+                    editDateInput.text = root.isoToUk(root.editDueDate)
+                }
+            }
+
+            ColumnLayout {
+                id: editCol
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 6
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Repeater {
+                        model: [
+                            { p: 0, label: "—" },
+                            { p: 1, label: "L" },
+                            { p: 2, label: "M" },
+                            { p: 3, label: "H" }
+                        ]
+                        delegate: Rectangle {
+                            required property var modelData
+                            Layout.preferredHeight: 24
+                            Layout.preferredWidth: 28
+                            radius: 4
+                            color: root.editPriority === modelData.p
+                                   ? root.priorityColor(modelData.p) === "transparent"
+                                     ? Qt.rgba(1, 1, 1, 0.18)
+                                     : root.priorityColor(modelData.p)
+                                   : Qt.rgba(0, 0, 0, 0.3)
+                            border.width: 1
+                            border.color: root.editPriority === modelData.p
+                                          ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(1, 1, 1, 0.05)
+                            Behavior on color { ColorAnimation { duration: 150 } }
+
+                            Text {
+                                anchors.centerIn: parent
+                                text: modelData.label
+                                color: root.editPriority === modelData.p && modelData.p > 0
+                                       ? Theme.bg : Theme.fg
+                                font.family: Theme.fontFamily
+                                font.pixelSize: 10
+                                font.bold: true
+                            }
+
+                            MouseArea {
+                                anchors.fill: parent
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: root.editPriority = modelData.p
+                            }
+                        }
+                    }
+
+                    Item { Layout.preferredWidth: 4 }
+
+                    Rectangle {
+                        Layout.fillWidth: true
+                        Layout.preferredHeight: 24
+                        radius: 4
+                        color: Qt.rgba(0, 0, 0, 0.3)
+                        border.width: 1
+                        border.color: editCatInput.activeFocus ? Theme.yellow : Qt.rgba(1, 1, 1, 0.08)
+
+                        TextInput {
+                            id: editCatInput
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            verticalAlignment: TextInput.AlignVCenter
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            text: root.editCategory
+                            onTextChanged: root.editCategory = text
+                            Keys.onReturnPressed: root.saveTodo(todoData.id, editInput.text)
+                            Keys.onEscapePressed: root.editingId = ""
+
+                            Text {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                text: "Category"
+                                color: Theme.fgVeryDim
+                                font: parent.font
+                                visible: !parent.text && !parent.activeFocus
+                            }
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.preferredWidth: 100
+                        Layout.preferredHeight: 24
+                        radius: 4
+                        color: Qt.rgba(0, 0, 0, 0.3)
+                        border.width: 1
+                        border.color: editDateInput.activeFocus ? Theme.yellow : Qt.rgba(1, 1, 1, 0.08)
+
+                        TextInput {
+                            id: editDateInput
+                            anchors.fill: parent
+                            anchors.leftMargin: 8
+                            anchors.rightMargin: 8
+                            verticalAlignment: TextInput.AlignVCenter
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 10
+                            text: root.isoToUk(root.editDueDate)
+                            onTextChanged: {
+                                if (text.length === 10 && text.indexOf("/") === 2) {
+                                    root.editDueDate = root.ukToIso(text)
+                                } else if (text.length === 0) {
+                                    root.editDueDate = ""
+                                }
+                            }
+                            inputMask: "99/99/9999;_"
+                            Keys.onReturnPressed: root.saveTodo(todoData.id, editInput.text)
+                            Keys.onEscapePressed: root.editingId = ""
+
+                            Text {
+                                anchors.fill: parent
+                                verticalAlignment: Text.AlignVCenter
+                                text: "dd/mm/yyyy"
+                                color: Theme.fgVeryDim
+                                font: parent.font
+                                visible: !parent.text && !parent.activeFocus
+                            }
+                        }
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 6
+
+                    Item { Layout.fillWidth: true }
+
+                    Rectangle {
+                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: 64
+                        radius: 4
+                        color: editCancelMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
+                        border.width: 1
+                        border.color: Qt.rgba(1, 1, 1, 0.1)
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Cancel"
+                            color: Theme.fg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                        }
+
+                        MouseArea {
+                            id: editCancelMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.editingId = ""
+                        }
+                    }
+
+                    Rectangle {
+                        Layout.preferredHeight: 24
+                        Layout.preferredWidth: 64
+                        radius: 4
+                        color: editSaveMouse.containsMouse ? Theme.brightYellow : Theme.yellow
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "Save"
+                            color: Theme.bg
+                            font.family: Theme.fontFamily
+                            font.pixelSize: 11
+                            font.bold: true
+                        }
+
+                        MouseArea {
+                            id: editSaveMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            onClicked: root.saveTodo(todoData.id, editInput.text)
+                        }
+                    }
+                }
             }
         }
     }

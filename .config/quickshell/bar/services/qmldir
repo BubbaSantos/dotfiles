@@ -1,3 +1,4 @@
+singleton SettingsStore 1.0 SettingsStore.qml
 singleton Cava 1.0 Cava.qml
 singleton ActivePlayer 1.0 ActivePlayer.qml
 singleton WifiService 1.0 WifiService.qml
