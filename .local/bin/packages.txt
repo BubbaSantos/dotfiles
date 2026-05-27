@@ -254,6 +254,7 @@ sushi
 swaybg
 swayosd
 swtpm
+syncthing
 system-config-printer
 tailscale
 teams-for-linux-bin
