@@ -11,21 +11,17 @@ Item {
     Layout.preferredHeight: 22
     Layout.preferredWidth: layoutRow.implicitWidth
 
-    Behavior on Layout.preferredWidth {
-        NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
-    }
-
     property bool locked: false
-    property bool peeking: false
-    // Stay open while the context menu is visible
-    readonly property bool open: locked || peeking || sharedMenu.visible
-
-    HoverHandler {
-        id: rootHover
-        onHoveredChanged: root.peeking = hovered
-    }
+    property bool menuFromUnpinned: false
+    // Stay open while a menu from an unpinned item is visible; ignore pinned-item menus
+    readonly property bool open: locked || chevronHover.hovered || drawerHover.hovered || menuFromUnpinned
 
     TrayMenu { id: sharedMenu }
+
+    Connections {
+        target: sharedMenu
+        function onVisibleChanged() { if (!sharedMenu.visible) root.menuFromUnpinned = false }
+    }
 
     readonly property var allItems: SystemTray.items.values
     readonly property var pinnedItems: allItems.filter(i => TimepiecesStore.isPinned(i.id))
@@ -46,6 +42,8 @@ Item {
                                    : 0
             clip: true
             visible: root.unpinnedItems.length > 0
+
+            HoverHandler { id: drawerHover }
 
             Behavior on Layout.preferredWidth {
                 NumberAnimation { duration: 280; easing.type: Easing.OutCubic }
@@ -134,7 +132,7 @@ Item {
                             onClicked: function(ev) {
                                 const item = udelegate.modelData
                                 if (ev.button === Qt.LeftButton) {
-                                    if (item.hasMenu) sharedMenu.openFor(item, udelegate)
+                                    if (item.hasMenu) { root.menuFromUnpinned = true; sharedMenu.openFor(item, udelegate) }
                                     else item.activate()
                                 } else if (ev.button === Qt.RightButton) {
                                     TimepiecesStore.togglePin(item.id)
@@ -171,6 +169,7 @@ Item {
             color: chevronMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : "transparent"
             visible: root.unpinnedItems.length > 0
 
+            HoverHandler { id: chevronHover }
             Behavior on color { ColorAnimation { duration: Theme.animFast } }
 
             Text {

@@ -115,11 +115,11 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseWifi > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 4000; onTriggered: root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseWifi * 1000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent

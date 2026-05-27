@@ -33,6 +33,22 @@ QtObject {
     property bool   nowPlayingScroll: true
     property int    osdDuration:      1500
 
+    // Workspaces
+    property string workspaceStyle:         "numbers"  // "numbers" | "dots" | "minimal"
+    property string workspaceAnim:          "slide"    // "slide" | "bounce" | "fade" | "none"
+    property real   workspaceActiveOpacity: 1.0
+
+    // Widget auto-close delays in seconds (0 = never)
+    property int autoCloseCalendar:   2
+    property int autoCloseNotif:      2
+    property int autoCloseMedia:      2
+    property int autoCloseControl:    2
+    property int autoCloseWifi:       2
+    property int autoCloseBluetooth:  2
+    property int autoCloseReminders:  2
+    property int autoCloseTodos:      2
+    property int autoCloseTimepieces: 2
+
     // Module visibility
     property bool showNowPlaying:    true
     property bool showTray:          true
@@ -43,6 +59,22 @@ QtObject {
     property bool showNotifications: true
     property bool showClock:         true
     property bool showBattery:       true
+
+    // Right-group module order
+    property var rightModuleOrder: ["Tray","Network","Bluetooth","Reminders","Todos","Notifications","Clock","Battery"]
+
+    function moveModuleUp(index) {
+        if (index <= 0) return
+        const arr = rightModuleOrder.slice()
+        const tmp = arr[index - 1]; arr[index - 1] = arr[index]; arr[index] = tmp
+        rightModuleOrder = arr; save()
+    }
+    function moveModuleDown(index) {
+        if (index >= rightModuleOrder.length - 1) return
+        const arr = rightModuleOrder.slice()
+        const tmp = arr[index + 1]; arr[index + 1] = arr[index]; arr[index] = tmp
+        rightModuleOrder = arr; save()
+    }
 
     property bool loaded: false
 
@@ -71,7 +103,20 @@ QtObject {
             showTodos:         root.showTodos,
             showNotifications: root.showNotifications,
             showClock:         root.showClock,
-            showBattery:       root.showBattery
+            showBattery:       root.showBattery,
+            rightModuleOrder:  root.rightModuleOrder,
+            workspaceStyle:         root.workspaceStyle,
+            workspaceAnim:          root.workspaceAnim,
+            workspaceActiveOpacity: root.workspaceActiveOpacity,
+            autoCloseCalendar:      root.autoCloseCalendar,
+            autoCloseNotif:         root.autoCloseNotif,
+            autoCloseMedia:         root.autoCloseMedia,
+            autoCloseControl:       root.autoCloseControl,
+            autoCloseWifi:          root.autoCloseWifi,
+            autoCloseBluetooth:     root.autoCloseBluetooth,
+            autoCloseReminders:     root.autoCloseReminders,
+            autoCloseTodos:         root.autoCloseTodos,
+            autoCloseTimepieces:    root.autoCloseTimepieces
         }, null, 2)
 
         const s = "SETTINGS_EOF_" + Math.floor(Math.random() * 1e9)
@@ -117,6 +162,20 @@ QtObject {
                     if (typeof d.showNotifications === "boolean") root.showNotifications = d.showNotifications
                     if (typeof d.showClock         === "boolean") root.showClock         = d.showClock
                     if (typeof d.showBattery       === "boolean") root.showBattery       = d.showBattery
+                    if (Array.isArray(d.rightModuleOrder) && d.rightModuleOrder.length > 0)
+                        root.rightModuleOrder = d.rightModuleOrder
+                    if (d.workspaceStyle) root.workspaceStyle = d.workspaceStyle
+                    if (d.workspaceAnim)  root.workspaceAnim  = d.workspaceAnim
+                    if (typeof d.workspaceActiveOpacity === "number") root.workspaceActiveOpacity = d.workspaceActiveOpacity
+                    if (typeof d.autoCloseCalendar   === "number") root.autoCloseCalendar   = d.autoCloseCalendar
+                    if (typeof d.autoCloseNotif       === "number") root.autoCloseNotif       = d.autoCloseNotif
+                    if (typeof d.autoCloseMedia       === "number") root.autoCloseMedia       = d.autoCloseMedia
+                    if (typeof d.autoCloseControl     === "number") root.autoCloseControl     = d.autoCloseControl
+                    if (typeof d.autoCloseWifi        === "number") root.autoCloseWifi        = d.autoCloseWifi
+                    if (typeof d.autoCloseBluetooth   === "number") root.autoCloseBluetooth   = d.autoCloseBluetooth
+                    if (typeof d.autoCloseReminders   === "number") root.autoCloseReminders   = d.autoCloseReminders
+                    if (typeof d.autoCloseTodos       === "number") root.autoCloseTodos       = d.autoCloseTodos
+                    if (typeof d.autoCloseTimepieces  === "number") root.autoCloseTimepieces  = d.autoCloseTimepieces
                 } catch(e) { console.warn("SettingsStore: parse error", e) }
                 root.loaded = true
             }

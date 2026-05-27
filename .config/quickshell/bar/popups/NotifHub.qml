@@ -63,11 +63,11 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseNotif > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseNotif * 1000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent
@@ -90,6 +90,19 @@ PanelWindow {
                     event.accepted = true
                 } else if (event.key === Qt.Key_C) {
                     NotifService.dismissAll()
+                    event.accepted = true
+                } else if (event.key === Qt.Key_Return || event.key === Qt.Key_Enter) {
+                    const notifs = NotifService.notifications
+                    if (notifs.length > 0) {
+                        const actions = (notifs[root.focusIndex].notif.actions || []).filter(a => {
+                            const id = (a.identifier || "").toLowerCase()
+                            return id !== "settings"
+                        })
+                        const action = actions.find(a => (a.identifier || "").toLowerCase() === "default")
+                                    || actions.find(a => (a.identifier || "").toLowerCase() === "activate")
+                                    || actions[0]
+                        if (action) { action.invoke(); root.close() }
+                    }
                     event.accepted = true
                 }
             }
@@ -529,7 +542,7 @@ PanelWindow {
             Text {
                 Layout.fillWidth: true
                 visible: NotifService.notifications.length > 0
-                text: "j/k navigate · D dismiss · C clear all · Esc close"
+                text: "j/k navigate · ↵ open · D dismiss · C clear all · Esc close"
                 color: Theme.fgVeryDim
                 font.family: Theme.fontFamily
                 font.pixelSize: 9

@@ -58,7 +58,10 @@ Singleton {
         return s[name] || s["gruvbox-dark"]
     }
 
-    readonly property var _s: _scheme(SettingsStore.colorScheme)
+    readonly property var _s: {
+        const _wc = SettingsStore.wallpaperColors  // always track as dependency
+        return _scheme(SettingsStore.colorScheme)
+    }
 
     // Colors
     readonly property color bg:           _s.bg

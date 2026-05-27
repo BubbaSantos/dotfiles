@@ -2,6 +2,7 @@ import "."
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Hyprland
 import Quickshell.Wayland
 import qs
 import qs.services
@@ -25,7 +26,11 @@ PanelWindow {
 
     function show(newItem) {
         fadeOut.stop()
+        snoozeExit.stop()
         toastCard.opacity = 1
+        toastCard.x = 8
+        toastCard.snoozeFlash = 0
+        toastCard.snoozed = false
         item = newItem
         visible = true
         hideTimer.restart()
@@ -47,6 +52,34 @@ PanelWindow {
         onFinished: root.visible = false
     }
 
+    SequentialAnimation {
+        id: snoozeExit
+        NumberAnimation { target: toastCard; property: "snoozeFlash"; to: 1.0; duration: 80; easing.type: Easing.OutCubic }
+        PauseAnimation { duration: 100 }
+        ParallelAnimation {
+            NumberAnimation { target: toastCard; property: "x"; to: root.cardWidth + 24; duration: 250; easing.type: Easing.InCubic }
+            NumberAnimation { target: toastCard; property: "opacity"; to: 0; duration: 250; easing.type: Easing.InCubic }
+        }
+        onFinished: { toastCard.x = 8; toastCard.opacity = 1; toastCard.snoozeFlash = 0; toastCard.snoozed = false; root.visible = false }
+    }
+
+    GlobalShortcut {
+        name: "dismissToast"
+        onPressed: { if (root.visible) { hideTimer.stop(); snoozeExit.stop(); fadeOut.start() } }
+    }
+
+    GlobalShortcut {
+        name: "snoozeToast"
+        onPressed: {
+            if (!root.visible) return
+            if (root.item) NotifService.snooze(root.item, 15)
+            hideTimer.stop()
+            fadeOut.stop()
+            toastCard.snoozed = true
+            snoozeExit.start()
+        }
+    }
+
     Connections {
         target: NotifService
         function onNewNotification(item) { root.show(item) }
@@ -60,11 +93,22 @@ PanelWindow {
         height: toastContent.implicitHeight + 20
         radius: 10
         color: Theme.popupBg
+        property real snoozeFlash: 0.0
+        property bool snoozed: false
         border.width: 1
         border.color: {
             if (!root.item) return "#f38c6f"
             const u = root.item.notif.urgency
             return u === 2 ? Theme.red : "#f38c6f"
+        }
+
+        // Snooze flash overlay
+        Rectangle {
+            anchors.fill: parent
+            radius: parent.radius
+            color: Theme.yellow
+            opacity: toastCard.snoozeFlash * 0.28
+            z: 10
         }
 
         // Urgency stripe
@@ -100,7 +144,7 @@ PanelWindow {
 
             Text {
                 anchors.centerIn: parent
-                text: "Snooze\n15m"
+                text: toastCard.snoozed ? "Snoozed!" : "Snooze\n15m"
                 horizontalAlignment: Text.AlignHCenter
                 color: Theme.yellow
                 font.family: Theme.fontFamily
@@ -116,7 +160,9 @@ PanelWindow {
                 onClicked: {
                     if (root.item) NotifService.snooze(root.item, 15)
                     hideTimer.stop()
-                    fadeOut.start()
+                    fadeOut.stop()
+                    toastCard.snoozed = true
+                    snoozeExit.start()
                 }
             }
         }

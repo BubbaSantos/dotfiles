@@ -8,7 +8,20 @@
       "Bash(playerctl -a metadata)",
       "Bash(python3 *)",
       "Bash(grep -v \"^$\")",
-      "Bash(xdg-settings get *)"
+      "Bash(xdg-settings get *)",
+      "Read(//home/bubba/.config/quickshell/**)",
+      "Bash(systemctl --user list-units)",
+      "Read(//home/bubba/.config/autostart/**)",
+      "Read(//home/bubba/.config/hypr/**)",
+      "Bash(omarchy menu *)",
+      "Bash(qs -c bar)",
+      "Bash(qs -c bar msg log)",
+      "Bash(pkill qs *)",
+      "Bash(brightnessctl -m)",
+      "Read(//etc/xdg/quickshell/noctalia-shell/Scripts/python/src/theming/**)",
+      "Read(//home/bubba/.config/noctalia/**)",
+      "Bash(hyprctl workspaces *)",
+      "Bash(hyprctl monitors *)"
     ]
   }
 }

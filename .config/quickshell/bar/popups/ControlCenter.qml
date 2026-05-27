@@ -42,7 +42,7 @@ PanelWindow {
 
     Process {
         id: brightReadProc
-        command: ["sh", "-c", "brightnessctl -m | cut -d, -f5"]
+        command: ["sh", "-c", "brightnessctl -m | cut -d, -f4"]
         stdout: StdioCollector {
             onStreamFinished: {
                 const val = parseInt(text.trim().replace("%", ""))
@@ -110,13 +110,13 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseControl > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
         Timer {
             id: autoCloseTimer
-            interval: 3000
+            interval: SettingsStore.autoCloseControl * 1000
             onTriggered: root.close()
         }
 
@@ -322,7 +322,7 @@ PanelWindow {
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width; height: 4; radius: 2
-                        color: Qt.rgba(1,1,1,0.1)
+                        color: Qt.rgba(1,1,1,0.18)
 
                         Rectangle {
                             width: parent.width * Math.min(1.0, root.vol)
@@ -376,7 +376,7 @@ PanelWindow {
                     Rectangle {
                         anchors.verticalCenter: parent.verticalCenter
                         width: parent.width; height: 4; radius: 2
-                        color: Qt.rgba(1,1,1,0.1)
+                        color: Qt.rgba(1,1,1,0.18)
 
                         Rectangle {
                             width: parent.width * root.brightness

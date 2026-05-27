@@ -378,11 +378,11 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseTodos > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseTodos * 1000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent
@@ -419,7 +419,7 @@ PanelWindow {
                     root.prevZone()
                     event.accepted = true
                 }
-                else if (event.key === Qt.Key_Down) {
+                else if (event.key === Qt.Key_Down || (event.key === Qt.Key_J && (event.modifiers & Qt.ShiftModifier))) {
                     if (event.modifiers & Qt.ShiftModifier) {
                         root.reorderKeyboard(1)
                     } else {
@@ -429,7 +429,7 @@ PanelWindow {
                     }
                     event.accepted = true
                 }
-                else if (event.key === Qt.Key_Up) {
+                else if (event.key === Qt.Key_Up || (event.key === Qt.Key_K && (event.modifiers & Qt.ShiftModifier))) {
                     if (event.modifiers & Qt.ShiftModifier) {
                         root.reorderKeyboard(-1)
                     } else {
@@ -458,11 +458,11 @@ PanelWindow {
                     }
                     event.accepted = true
                 }
-                else if (event.key === Qt.Key_Left && root.focusZone === "header") {
+                else if ((event.key === Qt.Key_Left || event.key === Qt.Key_H) && root.focusZone === "header") {
                     if (root.focusIndex > 0) root.focusIndex--
                     event.accepted = true
                 }
-                else if (event.key === Qt.Key_Right && root.focusZone === "header") {
+                else if ((event.key === Qt.Key_Right || event.key === Qt.Key_L) && root.focusZone === "header") {
                     if (root.focusIndex < 2) root.focusIndex++
                     event.accepted = true
                 }

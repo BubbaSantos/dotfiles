@@ -27,7 +27,14 @@ PanelWindow {
     function open_() { ActivePlayer.autoSelect(); pendingTrackChange = false; visible = true }
     function close() { visible = false }
 
-    onVisibleChanged: if (visible) PopupManager.open(root)
+    onVisibleChanged: {
+        if (visible) {
+            PopupManager.open(root)
+            if (SettingsStore.autoCloseMedia > 0) autoCloseTimer.restart()
+        } else {
+            autoCloseTimer.stop()
+        }
+    }
 
     readonly property var p: ActivePlayer.current
     readonly property bool hasContent: p && (p.trackTitle && p.trackTitle.length > 0) && !pendingTrackChange
@@ -84,7 +91,45 @@ PanelWindow {
 
     
 
-    function playerDisplayName(pl) {
+    // Returns labels already claimed by other players via confirmed xesam:url,
+    // so the fallback logic doesn't assign the same label to two different players.
+    function claimedLabels(pl, allPlayers) {
+        const claimed = new Set()
+        if (!allPlayers) return claimed
+        const patterns = [
+            ["music.youtube.com", "YouTube Music"],
+            ["youtube.com",       "YouTube"],
+            ["soundcloud.com",    "SoundCloud"],
+            ["spotify.com",       "Spotify"],
+            ["twitch.tv",         "Twitch"],
+            ["netflix.com",       "Netflix"],
+            ["bbc.co.uk",         "BBC"],
+        ]
+        for (const other of allPlayers) {
+            if (other === pl) continue
+            const ou = urlForPlayer(other)
+            if (!ou) continue
+            for (const [domain, label] of patterns) {
+                if (ou.indexOf(domain) !== -1) { claimed.add(label); break }
+            }
+        }
+        return claimed
+    }
+
+    // Infer service name from a browser window's title bar text.
+    function labelFromWindowTitle(title) {
+        if (!title) return ""
+        const tl = title.toLowerCase()
+        if (tl.indexOf("youtube music") !== -1) return "YouTube Music"
+        if (tl.indexOf("youtube")       !== -1) return "YouTube"
+        if (tl.indexOf("soundcloud")    !== -1) return "SoundCloud"
+        if (tl.indexOf("spotify")       !== -1) return "Spotify"
+        if (tl.indexOf("twitch")        !== -1) return "Twitch"
+        if (tl.indexOf("netflix")       !== -1) return "Netflix"
+        return ""
+    }
+
+    function playerDisplayName(pl, allPlayers) {
         if (!pl) return "Player"
 
         // Try MPRIS xesam:url first (most reliable when present)
@@ -99,41 +144,57 @@ PanelWindow {
             if (url.indexOf("bbc.co.uk") !== -1) return "BBC"
         }
 
-        // If identity is Chromium and we have track info, look at all chrome- windows
-        // to find which one has audio. Prefer the most-recently-focused chrome- class.
+        const claimed = claimedLabels(pl, allPlayers)
+
         const id = (pl.identity || "").toLowerCase()
         if (id === "chromium") {
             const toplevels = Hyprland.toplevels.values || []
-            // Sort by focusHistoryID ascending (lower = more recent)
-            // Use wayland.appId (always populated for native Wayland) as the class source;
-            // lastIpcObject["class"] is only updated on IPC events so may be stale/empty.
+            const byFocus = (a, b) => ((a.lastIpcObject && a.lastIpcObject["focusHistoryID"]) || 0)
+                                    - ((b.lastIpcObject && b.lastIpcObject["focusHistoryID"]) || 0)
+            // PWA windows (chrome-* class)
             const chromes = toplevels
                 .filter(t => { const c = (t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || ""; return c.toLowerCase().startsWith("chrome-") })
-                .sort((a, b) => ((a.lastIpcObject && a.lastIpcObject["focusHistoryID"]) || 0) - ((b.lastIpcObject && b.lastIpcObject["focusHistoryID"]) || 0))
+                .sort(byFocus)
+            // Regular browser windows (class = "chromium")
+            const regularChromes = toplevels
+                .filter(t => { const c = ((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || "").toLowerCase(); return c === "chromium" })
+                .sort(byFocus)
 
-            // Try matching by track title first (works for music players where title = song)
+            // Try matching by track title — check PWA windows first, then regular browser
             const title = pl.trackTitle || ""
             if (title) {
                 for (const t of chromes) {
                     if (t.title && t.title.indexOf(title) !== -1) {
                         const cls = (t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || ""
-                        return classToLabel(cls)
+                        const lbl = classToLabel(cls)
+                        if (!claimed.has(lbl)) return lbl
+                    }
+                }
+                for (const t of regularChromes) {
+                    if (t.title && t.title.indexOf(title) !== -1) {
+                        const lbl = labelFromWindowTitle(t.title)
+                        if (lbl && !claimed.has(lbl)) return lbl
                     }
                 }
             }
 
-            // No title match (or empty title) — pick the most specific known streaming service
-            // across all chrome windows (priority order, not focus order, so YTMusic beats YouTube)
+            // No title match — pick best service from PWA windows, skipping claimed labels
             const serviceOrder = ["YouTube Music", "YouTube", "SoundCloud", "Spotify", "Twitch", "Netflix", "BBC"]
             let bestIdx = serviceOrder.length
             for (const t of chromes) {
                 const cls = (t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || ""
                 const lbl = classToLabel(cls)
                 const idx = serviceOrder.indexOf(lbl)
-                if (idx !== -1 && idx < bestIdx) bestIdx = idx
+                if (idx !== -1 && idx < bestIdx && !claimed.has(lbl)) bestIdx = idx
             }
             if (bestIdx < serviceOrder.length) return serviceOrder[bestIdx]
-            // Fallback: desktop entry hint or generic
+
+            // Last resort — scan regular browser window titles
+            for (const t of regularChromes) {
+                const lbl = labelFromWindowTitle(t.title)
+                if (lbl && !claimed.has(lbl)) return lbl
+            }
+
             if (pl.desktopEntry) {
                 const lbl = classToLabel(pl.desktopEntry)
                 if (lbl) return lbl
@@ -144,9 +205,9 @@ PanelWindow {
         return pl.identity || "Player"
     }
 
-    function playerIcon(pl) {
+    function playerIcon(pl, allPlayers) {
         if (!pl) return "󰝚"
-        const label = playerDisplayName(pl)
+        const label = playerDisplayName(pl, allPlayers)
         if (label === "YouTube Music" || label === "YouTube") return "󰗃"
         if (label === "Spotify") return "󰓇"
         if (label === "SoundCloud") return "󰓀"
@@ -167,12 +228,18 @@ PanelWindow {
         const toplevels = Hyprland.toplevels.values || []
         const id = (pl.identity || "").toLowerCase()
         if (id === "chromium") {
+            const byFocus = (a, b) => ((a.lastIpcObject && a.lastIpcObject["focusHistoryID"]) || 0)
+                                    - ((b.lastIpcObject && b.lastIpcObject["focusHistoryID"]) || 0)
             const chromes = toplevels
                 .filter(t => { const c = (t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || ""; return c.toLowerCase().startsWith("chrome-") })
-                .sort((a, b) => ((a.lastIpcObject && a.lastIpcObject["focusHistoryID"]) || 0) - ((b.lastIpcObject && b.lastIpcObject["focusHistoryID"]) || 0))
+                .sort(byFocus)
+            const regularChromes = toplevels
+                .filter(t => { const c = ((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || "").toLowerCase(); return c === "chromium" })
+                .sort(byFocus)
             const title = pl.trackTitle || ""
             if (title) {
-                for (const t of chromes) { if (t.title && t.title.indexOf(title) !== -1) return t }
+                for (const t of chromes)        { if (t.title && t.title.indexOf(title) !== -1) return t }
+                for (const t of regularChromes) { if (t.title && t.title.indexOf(title) !== -1) return t }
             }
             const serviceOrder = ["YouTube Music", "YouTube", "SoundCloud", "Spotify", "Twitch", "Netflix", "BBC"]
             let bestIdx = serviceOrder.length, bestT = null
@@ -181,7 +248,8 @@ PanelWindow {
                 const idx = serviceOrder.indexOf(classToLabel(cls))
                 if (idx !== -1 && idx < bestIdx) { bestIdx = idx; bestT = t }
             }
-            return bestT
+            if (bestT) return bestT
+            return regularChromes[0] || null
         }
         for (const t of toplevels) {
             const cls = ((t.wayland && t.wayland.appId) || (t.lastIpcObject && t.lastIpcObject["class"]) || "").toLowerCase()
@@ -204,7 +272,7 @@ PanelWindow {
     Rectangle {
         id: card
         width: 360
-        height: cardCol.implicitHeight + 16
+        height: cardCol.implicitHeight + 18
 
         x: {
             if (!root.anchorItem) return 20
@@ -229,16 +297,15 @@ PanelWindow {
             onClicked: {}
         }
 
-        // Auto-close when mouse leaves the card and doesn't return within 5 s
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseMedia > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
         Timer {
             id: autoCloseTimer
-            interval: 2000
+            interval: SettingsStore.autoCloseMedia * 1000
             onTriggered: root.close()
         }
 
@@ -381,12 +448,12 @@ PanelWindow {
             anchors.topMargin: 8
             spacing: 8
 
-            // Player tabs (compact)
+            // Player tabs — only shown when 2+ real MPRIS players exist
             RowLayout {
                 Layout.fillWidth: true
                 Layout.rightMargin: 72
                 spacing: 4
-                visible: ActivePlayer.players.length > 0
+                visible: ActivePlayer.players.length > 1
 
                 Repeater {
                     model: ActivePlayer.players
@@ -417,13 +484,13 @@ PanelWindow {
                                 spacing: 5
 
                                 Text {
-                                    text: root.playerIcon(tabDelegate.modelData)
+                                    text: root.playerIcon(tabDelegate.modelData, ActivePlayer.players)
                                     color: ActivePlayer.selectedIndex === tabDelegate.index ? Theme.bg : Theme.fg
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 11
                                 }
                                 Text {
-                                    text: root.playerDisplayName(tabDelegate.modelData)
+                                    text: root.playerDisplayName(tabDelegate.modelData, ActivePlayer.players)
                                     color: ActivePlayer.selectedIndex === tabDelegate.index ? Theme.bg : Theme.fg
                                     font.family: Theme.fontFamily
                                     font.pixelSize: 10

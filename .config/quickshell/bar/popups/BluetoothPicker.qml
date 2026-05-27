@@ -130,11 +130,11 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseBluetooth > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 4000; onTriggered: if (!BluetoothService.scanning) root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseBluetooth * 1000; onTriggered: if (!BluetoothService.scanning) root.close() }
 
         Item {
             anchors.fill: parent

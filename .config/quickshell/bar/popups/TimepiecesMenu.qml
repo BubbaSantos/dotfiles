@@ -81,11 +81,11 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseTimepieces > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseTimepieces * 1000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent

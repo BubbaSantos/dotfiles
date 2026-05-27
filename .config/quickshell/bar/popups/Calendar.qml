@@ -130,19 +130,19 @@ PanelWindow {
 
         HoverHandler {
             onHoveredChanged: {
-                if (!hovered) autoCloseTimer.restart()
+                if (!hovered && SettingsStore.autoCloseCalendar > 0) autoCloseTimer.restart()
                 else autoCloseTimer.stop()
             }
         }
-        Timer { id: autoCloseTimer; interval: 2000; onTriggered: root.close() }
+        Timer { id: autoCloseTimer; interval: SettingsStore.autoCloseCalendar * 1000; onTriggered: root.close() }
 
         Item {
             anchors.fill: parent
             focus: root.visible
             Keys.onPressed: function(event) {
                 if      (event.key === Qt.Key_Escape) { root.close(); event.accepted = true }
-                else if (event.key === Qt.Key_Left)   { root.prevMonth(); event.accepted = true }
-                else if (event.key === Qt.Key_Right)  { root.nextMonth(); event.accepted = true }
+                else if (event.key === Qt.Key_Left  || event.key === Qt.Key_H) { root.prevMonth(); event.accepted = true }
+                else if (event.key === Qt.Key_Right || event.key === Qt.Key_L) { root.nextMonth(); event.accepted = true }
                 else if (event.key === Qt.Key_G)      { root.goToday(); event.accepted = true }
                 else if (event.key === Qt.Key_U)      { root.close(); todosPopup.open_(); event.accepted = true }
                 else if (event.key === Qt.Key_R)      { root.close(); remindersPopup.open_(); event.accepted = true }
