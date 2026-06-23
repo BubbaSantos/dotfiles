@@ -225,6 +225,7 @@ python-pip
 python-pipx
 python-poetry-core
 python-pyaudio
+python-recurring-ical-events
 python-terminaltexteffects
 python-validity
 qbittorrent
@@ -241,6 +242,7 @@ rofi
 ruby
 rust
 rustdesk-bin
+s-tui
 satty
 sddm
 signal-desktop
@@ -264,6 +266,7 @@ telepathy-glib
 tesseract
 tesseract-data-eng
 thermald
+throttled
 tigervnc
 tldr
 tmux
@@ -302,7 +305,7 @@ xdg-desktop-portal-hyprland
 xdg-terminal-exec
 xdotool
 xmlstarlet
-xournalpp
+xpad
 yaru-icon-theme
 yay
 yay-debug

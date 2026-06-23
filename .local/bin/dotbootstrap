@@ -1,6 +1,5 @@
 #!/bin/bash
 chmod +x ~/.local/bin/*
-chmod +x ~/.config/hypr/scripts/*
 chmod +x ~/.config/waybar/scripts/*
 echo "Made all scripts executable."
 
