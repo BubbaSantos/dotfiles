@@ -7,7 +7,7 @@ USAGE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/emojis/usage-count.txt"
 
 # Check if emojis file exists
 if [ ! -f "$EMOJIS_FILE" ]; then
-    notify-send "Emoji Picker" "Emojis file not found: $EMOJIS_FILE"
+    notify-send -a "Emoji Picker" -i "face-smile-symbolic" "Emojis file not found: $EMOJIS_FILE"
     exit 1
 fi
 
@@ -22,7 +22,7 @@ elif command -v wofi &> /dev/null; then
 elif command -v fzf &> /dev/null; then
     LAUNCHER="fzf"
 else
-    notify-send "Emoji Picker" "No launcher found"
+    notify-send -a "Emoji Picker" -i "face-smile-symbolic" "No launcher found"
     exit 1
 fi
 
@@ -109,5 +109,5 @@ if [ -n "$emoji" ]; then
     sleep 0.2
     wtype -M ctrl v -m ctrl
 else
-    notify-send "Emoji Picker" "Emoji not found: $shorthand"
+    notify-send -a "Emoji Picker" -i "face-smile-symbolic" "Emoji not found: $shorthand"
 fi

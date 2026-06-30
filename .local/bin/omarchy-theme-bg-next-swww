@@ -9,7 +9,7 @@ mapfile -d '' -t BACKGROUNDS < <(find -L "$BACKGROUNDS_DIR" -type f -print0 | so
 TOTAL=${#BACKGROUNDS[@]}
 
 if [[ $TOTAL -eq 0 ]]; then
-  notify-send "No background was found for theme" -t 2000
+  notify-send -a "Wallpaper" -i "preferences-desktop-wallpaper" "No background was found for theme" -t 2000
  swww img --transition-type=fade --transition-duration=2 <(convert -size 2880x1620 xc:'#000000' png:-)
 else
   # Get current background from symlink

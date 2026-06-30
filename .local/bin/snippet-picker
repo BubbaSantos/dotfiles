@@ -4,7 +4,7 @@ SNIPPETS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/snippets/work-snippets.txt"
 USAGE_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/snippets/usage-count.txt"
 
 if [ ! -f "$SNIPPETS_FILE" ]; then
-    notify-send "Snippet Picker" "Snippets file not found: $SNIPPETS_FILE"
+    notify-send -a "Snippet Picker" -i "edit-paste" "Snippets file not found: $SNIPPETS_FILE"
     exit 1
 fi
 
@@ -123,5 +123,5 @@ if [ -n "$snippet_text" ]; then
     sleep 0.2
     wtype -M ctrl v -m ctrl
 else
-    notify-send "Snippet Picker" "Snippet not found: $shortcut"
+    notify-send -a "Snippet Picker" -i "edit-paste" "Snippet not found: $shortcut"
 fi

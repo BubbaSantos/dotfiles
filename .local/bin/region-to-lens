@@ -18,4 +18,4 @@ wl-copy --type image/png < "$FILE"
 xdg-open "https://lens.google.com/upload"
 
 # Notify user to paste manually
-notify-send "Screenshot Copied" "Press Ctrl+V in Google Lens to paste"
+notify-send -a "Google Lens" -i "applets-screenshooter" "Screenshot Copied" "Press Ctrl+V in Google Lens to paste"

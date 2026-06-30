@@ -13,6 +13,7 @@ bc
 betterbird-bin
 bibata-cursor-theme
 bitwarden
+blueprint-compiler
 bluetui
 brave-bin
 brightnessctl
@@ -102,6 +103,7 @@ inetutils
 intel-media-driver
 intel-ucode
 inxi
+itstool
 iwd
 jellyfin-git
 jome
@@ -233,6 +235,7 @@ qemu-full
 qt5-wayland
 qt6-wayland
 remmina
+rencal-bin
 retroarch
 retroarch-assets-glui
 retroarch-assets-ozone
@@ -281,6 +284,7 @@ ufw-docker
 unzip
 usage
 uwsm
+vala
 ventoy-bin
 virt-manager
 virt-viewer
