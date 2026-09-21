@@ -1,6 +1,8 @@
 aether
 alacritty
 alsa-utils
+android-tools
+android-udev
 anydesk-bin
 asdcontrol
 authenticator
@@ -88,6 +90,7 @@ gvfs-mtp
 gvfs-nfs
 gvfs-smb
 handy-bin
+hunspell-en_gb
 hypridle
 hyprland
 hyprland-guiutils
@@ -181,11 +184,13 @@ luarocks
 mako
 man-db
 mariadb-libs
+matugen
 mediawriter
 micro
 mise
 moonlight-qt
 mpv
+mullvad-vpn
 nautilus
 nautilus-python
 neovim
@@ -227,6 +232,7 @@ python-pip
 python-pipx
 python-poetry-core
 python-pyaudio
+python-pyserial
 python-recurring-ical-events
 python-terminaltexteffects
 python-validity
@@ -240,6 +246,7 @@ retroarch
 retroarch-assets-glui
 retroarch-assets-ozone
 retroarch-assets-xmb
+rich-cli
 ripgrep
 rofi
 ruby
@@ -264,7 +271,7 @@ swtpm
 syncthing
 system-config-printer
 tailscale
-teams-for-linux-bin
+teams-for-linux
 telepathy-glib
 tesseract
 tesseract-data-eng

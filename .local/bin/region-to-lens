@@ -6,6 +6,8 @@ mkdir -p "$DIR"
 FILE="$DIR/region-$(date +%s).png"
 
 # Take region screenshot
+qs ipc -c "QuickShell Bar" call screenshot begin
+trap 'qs ipc -c "QuickShell Bar" call screenshot end' EXIT
 grim -g "$(slurp)" "$FILE"
 
 # Exit if selection cancelled
