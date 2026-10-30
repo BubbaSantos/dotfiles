@@ -19,5 +19,39 @@ wl-copy --type image/png < "$FILE"
 # Open Google Lens
 xdg-open "https://lens.google.com/upload"
 
-# Notify user to paste manually
-notify-send -a "Google Lens" -i "applets-screenshooter" "Screenshot Copied" "Press Ctrl+V in Google Lens to paste"
+# Find the Vivaldi window that just opened/focused for the Lens tab
+vivaldi_addr=""
+for i in $(seq 1 40); do
+	win="$(hyprctl activewindow -j 2>/dev/null)"
+	if [[ "$(jq -r '.class // empty' <<<"$win")" == "vivaldi-stable" ]]; then
+		vivaldi_addr="$(jq -r '.address' <<<"$win")"
+		break
+	fi
+	sleep 0.25
+done
+
+# Wait for the tab's title to stop changing (page has finished navigating/loading).
+# lens.google.com/upload redirects a couple of times before settling, so we
+# can't match on a fixed title like "Lens".
+prev_title=""
+stable=0
+for i in $(seq 1 40); do
+	title="$(hyprctl activewindow -j 2>/dev/null | jq -r '.title // empty')"
+	if [[ -n "$title" && "$title" == "$prev_title" ]]; then
+		stable=$((stable + 1))
+		[ "$stable" -ge 3 ] && break
+	else
+		stable=0
+	fi
+	prev_title="$title"
+	sleep 0.25
+done
+sleep 0.5
+
+# Something else (e.g. a media window) can steal focus while we wait, so
+# re-focus the Vivaldi window right before sending the paste keystroke.
+[ -n "$vivaldi_addr" ] && hyprctl dispatch focuswindow "address:$vivaldi_addr" >/dev/null
+sleep 0.2
+wtype -M ctrl -k v -m ctrl
+
+notify-send -a "Google Lens" -i "applets-screenshooter" "Screenshot Pasted" "Image pasted into Google Lens"
