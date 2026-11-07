@@ -22,7 +22,7 @@ cheese
 chromium
 clang
 claude-code
-clipse
+clipse-patched
 cups
 cups-browsed
 cups-filters
@@ -186,6 +186,7 @@ noto-fonts-extra
 nss-mdns
 nvidia-580xx-dkms
 nvidia-580xx-utils
+oath-toolkit
 ollama
 omarchy-keyring
 omarchy-nvim
@@ -254,6 +255,7 @@ tesseract-data-eng
 thermald
 throttled
 tldr
+tmux
 ttf-cascadia-mono-nerd
 ttf-ia-writer
 ttf-jetbrains-mono-nerd
@@ -269,6 +271,7 @@ vosk-api
 vpl-gpu-rt
 webkit2gtk
 webkit2gtk-4.1
+webkitgtk-6.0
 wev
 wget
 whois
